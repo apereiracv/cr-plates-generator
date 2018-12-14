@@ -1,0 +1,5 @@
+# Ignore Visual Studio Code files
+.vscode
+
+# Ignore compiled files
+*.pyc
