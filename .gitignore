@@ -3,3 +3,15 @@
 
 # Ignore compiled files
 *.pyc
+*.pyo
+
+# Base folder images
+*.jpg
+*.gif
+*.png
+*.bmp
+*.svg
+*.ico
+
+# Exceptions
+!templates/*.*

@@ -1,6 +1,6 @@
 {
     "car-old": {
-        "template": [
+        "base-image": [
             "cr-blue-flag.jpg",
             "cr-blue-no-flag.jpg"
         ],
@@ -15,7 +15,7 @@
         ]
     },
     "car-new": {
-        "template": [
+        "base-image": [
             "cr-blue-flag.jpg"
         ],
         "plate-number": [
@@ -29,7 +29,7 @@
         ]
     },
     "small-truck": {
-        "template": [
+        "base-image": [
             "cr-red-flag.jpg",
             "cr-red-no-flag.jpg"
         ],
@@ -49,15 +49,18 @@
                 "size": 250
             }            
         ],
-        "plate-number": {
-            "regex": "[0-9][0-9][0-9][0-9][0-9][0-9]",
-            "position": [220, 60],
-            "font": "roadgeek-2005-engschrift.ttf",
-            "color": "#ad180d"
-        }
+        "plate-number": [
+            {
+                "regex": "[0-9][0-9][0-9][0-9][0-9][0-9]",
+                "position": [220, 60],
+                "font": "roadgeek-2005-engschrift.ttf",
+                "color": "#ad180d",
+                "size": 470
+            }
+        ]
     },
     "taxi": {
-        "template": [
+        "base-image": [
             "cr-red-flag-bar.jpg"
         ],
         "extra-text": [
@@ -83,11 +86,14 @@
                 "size": 250
             }            
         ],
-        "plate-number": {
-            "regex": "[0-9][0-9][0-9][0-9]",
-            "position": [220, 60],
-            "font": "roadgeek-2005-engschrift.ttf",
-            "color": "#ad180d"
-        }
+        "plate-number": [
+            {
+                "regex": "[0-9][0-9][0-9][0-9]",
+                "position": [220, 60],
+                "font": "roadgeek-2005-engschrift.ttf",
+                "color": "#ad180d",
+                "size": 470
+            }
+        ]
     }
 }
