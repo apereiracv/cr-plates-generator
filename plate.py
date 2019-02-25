@@ -1,4 +1,22 @@
+#######################################################################
+# Copyright (c) 2019 Alejandro Pereira
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>
+
+#######################################################################
 #!/usr/bin/python
+
 import os
 import cv2
 import rstr
@@ -55,7 +73,8 @@ class Plate(object):
     def save_image(self, path=None):
         """Saves plate image to disk"""
         savePath = path if path is not None else self.context.getConfig("General", "output_path")
-        filename, ext = os.path.splitext(self.base_file)
+        #filename, ext = os.path.splitext(self.base_file)
+        ext = '.jpg' if self.image_data.shape[2] == 3 else '.png'
         savePath = os.path.join(savePath, self.plate_number + ext)
         cv2.imwrite(savePath, self.image_data)
 
@@ -64,8 +83,7 @@ class Plate(object):
         return cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR)
 
 
-
-    # TODO: Move to utilities module
     def get_random_item(self, list):
+        # TODO: Move to utilities module
         index = random.randrange(len(list))
         return list[index]

@@ -1,5 +1,23 @@
-#!/usr/bin/python
 # Code adapted from: https://nbviewer.jupyter.org/github/manisoftwartist/perspectiveproj/blob/master/perspective.ipynb
+#######################################################################
+# Copyright (c) 2019 Alejandro Pereira
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>
+
+#######################################################################
+#!/usr/bin/python
+
 import numpy as np
 import cv2
 import random
@@ -64,7 +82,7 @@ def get_perspective_transform_estimation(pts_in, pts_out, width, height, side_le
     return pin, pout
 
 
-def warp_matrix(width, height, theta, phi, gamma, scale, field_vision):
+def get_warp_matrix(width, height, theta, phi, gamma, scale, field_vision):
     
     fv_half = np.deg2rad(field_vision / 2.)
     d = np.sqrt(width*width + height*height)
@@ -106,7 +124,7 @@ def warp_matrix(width, height, theta, phi, gamma, scale, field_vision):
     assert(pts_out_pt2f.dtype == np.float32)
     M33 = cv2.getPerspectiveTransform(pts_in_pt2f, pts_out_pt2f)
 
-    return M33, side_length
+    return M33, int(side_length)
 
 
 def get_random_angles(max_theta, max_phi, max_gamma, step):
@@ -117,23 +135,49 @@ def get_random_angles(max_theta, max_phi, max_gamma, step):
     return (theta, phi, gamma)
 
 
+def cut_warped_image(image, warped_image, matrix):
+    # Find coordinates position of warped image
+    image_coords = np.array([[
+                    [0,0], 
+                    [image.shape[1], 0], 
+                    [0, image.shape[0]], 
+                    [image.shape[1], image.shape[0]]]], dtype='float32')
+
+    warped_coords = cv2.perspectiveTransform(image_coords, matrix)[0]
+
+    # Find the minimum rect bouding box that fits the warped image. p = [x, y]
+    p1 = np.min(warped_coords, axis=0).astype(int)
+    p2 = np.max(warped_coords, axis=0).astype(int)
+    
+    # Return only this bounding box region
+    result = warped_image[p1[1]:p2[1], p1[0]:p2[0]]
+
+    return result
+
+
 def warp_image(image, theta, phi, gamma, scale, fovy):
+    """Changes the perspective of an image according to x,y,z angles"""
+
     height, width, _ = image.shape
-    matrix, side_length = warp_matrix(width, height, theta, phi, gamma, scale, fovy); #Compute warp matrix
-    side_length = int(side_length)
-    result = cv2.warpPerspective(image, matrix, (side_length, side_length)); #Do actual image warp
+    matrix, side_length = get_warp_matrix(width, height, theta, phi, gamma, scale, fovy) # Compute warp matrix
+    transparent_bg = (0,0,0,0)
+    result = image
+    if image.shape[2] == 3: result = cv2.cvtColor(image, cv2.COLOR_RGB2RGBA)
+    result = cv2.warpPerspective(image, matrix, (side_length, side_length), borderValue=transparent_bg) # Do actual image warp
+    result = cut_warped_image(image, result, matrix)
+    
     return result
 
 
 def warp_image_random(image, context):
     """Changes the perspective viewing angles of an image by a random number, depending on config"""
 
-    max_theta = int(context.get("Perspective", "max_theta"))
-    max_phi   = int(context.get("Perspective", "max_phi"))
-    max_gamma = int(context.get("Perspective", "max_gamma"))
-    step = int(context.get("Perspective", "rotation_step"))
-    fov = int(context.get("Perspective", "field_view"))
-    scale = float(context.get("Perspective", "scale"))
+    max_theta = int(context.getConfig("Perspective", "max_theta"))
+    max_phi   = int(context.getConfig("Perspective", "max_phi"))
+    max_gamma = int(context.getConfig("Perspective", "max_gamma"))
+    step = int(context.getConfig("Perspective", "rotation_step"))
+    fov = int(context.getConfig("Perspective", "field_of_view"))
+    scale = float(context.getConfig("Perspective", "scale"))
 
     theta, phi, gamma = get_random_angles(max_theta, max_phi, max_gamma, step)
     result = warp_image(image, theta, phi, gamma, scale, fov)
