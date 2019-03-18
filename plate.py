@@ -18,22 +18,33 @@
 #!/usr/bin/python
 
 import os
+import random
+import ast
+import copy
+
 import cv2
 import rstr
+import numpy as np
 import PIL.Image, PIL.ImageFont, PIL.ImageDraw
-import numpy
-import random
+
+import perspective
+
+RGB_GREEN = (0, 255, 0)
+RGBA_GREEN = (0, 255, 0, 0)
+BBOX_COORDS = {'char': None, 'x1': None, 'x2': None, 'y1': None, 'y2': None, 'angle': None}
+BBOX_WH = {'char': None, 'cx': None, 'cy': None, 'w': None, 'h': None, 'angle': None}
 
 class Plate(object):
     """Represents a Plate and holds all its attributes"""
 
-    def __init__(self, context, type, template):
+    def __init__(self, context, plate_type, template):
         """Constructor"""
         # Base attributes
         self.context = context
-        self.type = type
+        self.type = plate_type
         self.base_file = None
         self.plate_number = None
+        self.bounding_boxes = None
         self.image_data = None     
 
         self.__autogenerate(template)
@@ -43,12 +54,13 @@ class Plate(object):
         """Generates plate based on template provided"""
         # Open base image template 
         self.base_file = self.get_random_item(template["base-image"])
-        image_path = os.path.join(self.context.getConfig("General", "templates_folder"), self.base_file)
+        image_path = os.path.join(self.context.getConfig("General", "templates_path"), self.base_file)
         self.image_data = PIL.Image.open(image_path)
 
+        # TODO: Add bounding boxes for annotations
         # Generate & draw plate number
         plate_template = self.get_random_item(template["plate-number"])
-        self.plate_number = self.draw_regex(plate_template)
+        self.plate_number, self.bounding_boxes = self.draw_regex(plate_template)
 
         # Draw extra text, if any
         if "extra-text" in template.keys():
@@ -62,28 +74,76 @@ class Plate(object):
     def draw_regex(self, text_template):
         """Draws text on plate image based on a template object"""
         draw = PIL.ImageDraw.Draw(self.image_data)
-        font_path = os.path.join(self.context.getConfig("General", "templates_folder"), text_template["font"])
+        font_path = os.path.join(self.context.getConfig("General", "templates_path"), text_template["font"])
         text_font = PIL.ImageFont.truetype(font_path, text_template["size"])
         text = rstr.xeger(text_template["regex"])
-        draw.text(text_template["position"], text, font=text_font, fill=text_template["color"])
+        ascent, descent = text_font.getmetrics()
+        # Draw each character and calculate its bounding box
+        bbox_padding = ast.literal_eval(self.context.getConfig("Text", "bbox_padding"))
+        bounding_boxes = []
+        last_pos_x = 0
+        for char in text:
+            # TODO: Check that bounding boxes and positions are actually inside the image
+            # TODO: Separate special characters cases (dash '-')
+            (width, baseline), (offset_x, offset_y) = text_font.font.getsize(char)
+            height = ascent - offset_y # Some fonts can contain an offset in height (accounted for ascent)
+            char_pos_x = text_template["position"][0] + last_pos_x
+            char_pos_y = text_template["position"][1]
+            # Draw character in desired position
+            draw.text((char_pos_x - offset_x, char_pos_y - offset_y), char, font=text_font, fill=text_template["color"])
+            new_bbox = copy.copy(BBOX_WH)
+            x1 = (char_pos_x - bbox_padding[0])
+            y1 = (char_pos_y - bbox_padding[1])
+            x2 = (char_pos_x + width + bbox_padding[0])
+            y2 = (char_pos_y + height + bbox_padding[1])
+            new_bbox['char'], new_bbox['angle'] = char, 0
+            new_bbox['cx'], new_bbox['cy'], new_bbox['w'], new_bbox['h'] = perspective.coords_to_bbox([x1,y1,x2,y2])
+            bounding_boxes.append(new_bbox)
+            last_pos_x = last_pos_x + width + text_template["spacing"]
 
-        return text
+        return text, bounding_boxes
 
-    
+
+    def draw_bboxes(self):
+        """Returns image_data with drawn bounding boxes of plate characters"""
+        assert(len(self.bounding_boxes) > 0)
+        
+        result_image = copy.copy(self.image_data)
+        for bbox in self.bounding_boxes:
+            vertices = perspective.get_bbox_vertices(bbox)
+            pts = np.array([vertices], np.int32)
+            cv2.polylines(result_image, [pts], True, self.get_color(), 2)
+
+        return result_image
+
+
     def save_image(self, path=None):
         """Saves plate image to disk"""
         savePath = path if path is not None else self.context.getConfig("General", "output_path")
-        #filename, ext = os.path.splitext(self.base_file)
-        ext = '.jpg' if self.image_data.shape[2] == 3 else '.png'
-        savePath = os.path.join(savePath, self.plate_number + ext)
-        cv2.imwrite(savePath, self.image_data)
+        #ext = '.jpg' if self.image_data.shape[2] == 3 else '.png'
+        savePath = os.path.join(savePath, self.plate_number + '.jpg')
+        save_data = self.image_data
+        if save_data.shape[2] == 4:
+            save_data = cv2.cvtColor(save_data, cv2.COLOR_RGBA2RGB)
+        # Draw bounding boxes if needed
+        if self.context.getBoolean("Text", "draw_bboxes"):
+            save_data = self.draw_bboxes()
+
+        cv2.imwrite(savePath, save_data)
 
 
     def pil_to_cv2(self, image):
-        return cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR)
+        return cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
 
     def get_random_item(self, list):
         # TODO: Move to utilities module
         index = random.randrange(len(list))
         return list[index]
+
+
+    def get_color(self):
+        if self.image_data.shape[2] == 3:
+            return RGB_GREEN
+        else:
+            return RGBA_GREEN

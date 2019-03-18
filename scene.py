@@ -20,6 +20,8 @@
 import os
 import cv2
 import random
+import copy
+
 
 def get_random_bg(context):
     # TODO: Add checks to make sure that background image size is able to contain the plate
@@ -47,15 +49,25 @@ def get_random_position(image_width, image_height, bg_width, bg_height):
     return x1, y1, x2, y2
 
 
-def add_backgroud(image, context):
-    bg_image = get_random_bg(context)
-    x1, y1, x2, y2 = get_random_position(image.shape[1], image.shape[0], bg_image.shape[1], bg_image.shape[0])
+def add_backgroud(image, bboxes, context):
+    result_image = get_random_bg(context)
+    x1, y1, x2, y2 = get_random_position(image.shape[1], image.shape[0], result_image.shape[1], result_image.shape[0])
     
     alpha_image = image[:, :, 3] / 255.0
     alpha_bg = 1.0 - alpha_image
 
     # Add images by alpha channel
     for channel in range(0, 3):
-        bg_image[y1:y2, x1:x2, channel] = (alpha_image * image[:, :, channel] + alpha_bg * bg_image[y1:y2, x1:x2, channel])
+        result_image[y1:y2, x1:x2, channel] = (alpha_image * image[:, :, channel] + alpha_bg * result_image[y1:y2, x1:x2, channel])
 
-    return bg_image
+    # Modify bounding boxes with new position within the image
+    result_bboxes = None
+    if bboxes:
+        result_bboxes = []
+        for bbox in bboxes:
+            new_bbox = copy.copy(bbox)
+            new_bbox['cx'] += x1
+            new_bbox['cy'] += y1
+            result_bboxes.append(new_bbox)
+
+    return result_image, result_bboxes

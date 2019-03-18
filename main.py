@@ -27,16 +27,19 @@ import scene
 
 appContext = context.Context('configuration.cfg')
 templates = jsonutil.deserializeJson('templates.json')
-plate1 = plate.Plate(appContext, 'car-old', templates['car-old'])
+#plate1 = plate.Plate(appContext, 'car-old', templates['car-old'])
 plate2 = plate.Plate(appContext, 'car-new', templates['car-new'])
-plate3 = plate.Plate(appContext, 'small-truck', templates['small-truck'])
-plate4 = plate.Plate(appContext, 'taxi', templates['taxi'])
+#plate3 = plate.Plate(appContext, 'small-truck', templates['small-truck'])
+#plate4 = plate.Plate(appContext, 'taxi', templates['taxi'])
 
-plate1.image_data = perspective.warp_image_random(plate1.image_data, appContext)
-plate1.image_data = scene.add_backgroud(plate1.image_data, appContext)
+# plate1.image_data, plate1.bounding_boxes = perspective.warp_image_random(plate1.image_data, plate1.bounding_boxes, appContext)
+# plate1.image_data, plate1.bounding_boxes = scene.add_backgroud(plate1.image_data, plate1.bounding_boxes, appContext)
+
+plate2.image_data, plate2.bounding_boxes = perspective.warp_image_random(plate2.image_data, plate2.bounding_boxes, appContext)
+plate2.image_data, plate2.bounding_boxes = scene.add_backgroud(plate2.image_data, plate2.bounding_boxes, appContext)
 
 ouput_path = appContext.getConfig('General', 'output_path')
-plate1.save_image(ouput_path)
-# plate2.save_image(path)
-# plate3.save_image(path)
-# plate4.save_image(path)
+# plate1.save_image(ouput_path)
+plate2.save_image(ouput_path)
+# plate3.save_image(ouput_path)
+# plate4.save_image(ouput_path)

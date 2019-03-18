@@ -1,6 +1,7 @@
 # cr-plates-generator
 Costa Rican license plate dataset generator
 
+## This repo is WIP - Not yet finised, it is not guaranteed to work yet.
 
 # References
 https://nbviewer.jupyter.org/github/manisoftwartist/perspectiveproj/blob/master/perspective.ipynb

@@ -1,4 +1,5 @@
 # Code adapted from: https://nbviewer.jupyter.org/github/manisoftwartist/perspectiveproj/blob/master/perspective.ipynb
+
 #######################################################################
 # Copyright (c) 2019 Alejandro Pereira
 
@@ -18,10 +19,13 @@
 #######################################################################
 #!/usr/bin/python
 
+import math
+import random
+import copy
+from functools import reduce
+
 import numpy as np
 import cv2
-import random
-from functools import reduce
 
 def get_rotation_matrix(rotation_angles):
     
@@ -135,13 +139,14 @@ def get_random_angles(max_theta, max_phi, max_gamma, step):
     return (theta, phi, gamma)
 
 
-def cut_warped_image(image, warped_image, matrix):
+def cut_warped_image(warped_image, source_width, source_height, matrix):
+    """Returns a cropped version of the image, containing the minimum size required to contain the image"""
     # Find coordinates position of warped image
     image_coords = np.array([[
                     [0,0], 
-                    [image.shape[1], 0], 
-                    [0, image.shape[0]], 
-                    [image.shape[1], image.shape[0]]]], dtype='float32')
+                    [source_width, 0], 
+                    [0, source_height], 
+                    [source_width, source_height]]], dtype='float32')
 
     warped_coords = cv2.perspectiveTransform(image_coords, matrix)[0]
 
@@ -149,29 +154,61 @@ def cut_warped_image(image, warped_image, matrix):
     p1 = np.min(warped_coords, axis=0).astype(int)
     p2 = np.max(warped_coords, axis=0).astype(int)
     
-    # Return only this bounding box region
+    # Crop image
     result = warped_image[p1[1]:p2[1], p1[0]:p2[0]]
 
-    return result
+    return result, [p1, p2]
 
 
-def warp_image(image, theta, phi, gamma, scale, fovy):
+def warp_bboxes(bboxes, theta, matrix, crop_points=None):
+    """Re-calculates new bounding boxes based on transformation matrix used for an image"""
+    warped_bboxes = []
+    for bbox in bboxes:
+        bbox_coords = bbox_to_coords(bbox)
+        bbox_points = np.array([[
+            [bbox_coords[0], bbox_coords[1]],
+            [bbox_coords[2], bbox_coords[1]],
+            [bbox_coords[0], bbox_coords[3]],
+            [bbox_coords[2], bbox_coords[3]]
+        ]], dtype='float32')
+
+        warped_coords = cv2.perspectiveTransform(bbox_points, matrix)[0]
+        # Get maximum width, height of the polygon
+        new_width = max(warped_coords[1][0] - warped_coords[0][0], warped_coords[3][0] - warped_coords[2][0])
+        new_height = max(warped_coords[2][1] - warped_coords[0][1], warped_coords[3][1] - warped_coords[1][1])
+        new_center = get_centroid(warped_coords)
+        # Apply cropping to bbox if points provided
+        if crop_points:
+            new_center[0] -= crop_points[0][0]
+            new_center[1] -= crop_points[0][1]
+        new_bbox = {}
+        new_bbox['angle'] = theta
+        new_bbox['w'], new_bbox['h'] = new_width, new_height
+        new_bbox['cx'], new_bbox['cy'] = new_center[0], new_center[1]
+        warped_bboxes.append(new_bbox)
+
+    return warped_bboxes
+
+
+def warp_image(image, theta, phi, gamma, scale, fovy, bboxes=None):
     """Changes the perspective of an image according to x,y,z angles"""
-
     height, width, _ = image.shape
     matrix, side_length = get_warp_matrix(width, height, theta, phi, gamma, scale, fovy) # Compute warp matrix
     transparent_bg = (0,0,0,0)
-    result = image
-    if image.shape[2] == 3: result = cv2.cvtColor(image, cv2.COLOR_RGB2RGBA)
-    result = cv2.warpPerspective(image, matrix, (side_length, side_length), borderValue=transparent_bg) # Do actual image warp
-    result = cut_warped_image(image, result, matrix)
-    
-    return result
+    result_image = image
+    if image.shape[2] == 3:
+        result_image = cv2.cvtColor(image, cv2.COLOR_RGB2RGBA)
+    result_image = cv2.warpPerspective(result_image, matrix, (side_length, side_length), borderValue=transparent_bg) # Do actual image warp
+    result_image, crop_points = cut_warped_image(result_image, image.shape[1], image.shape[0], matrix)
+    result_bboxes = None
+    if bboxes: 
+        result_bboxes = warp_bboxes(bboxes, theta, matrix, crop_points)
+
+    return result_image, result_bboxes
 
 
-def warp_image_random(image, context):
-    """Changes the perspective viewing angles of an image by a random number, depending on config"""
-
+def warp_image_random(image, bboxes, context):
+    """Changes the perspective viewing angles of an image by a random number"""
     max_theta = int(context.getConfig("Perspective", "max_theta"))
     max_phi   = int(context.getConfig("Perspective", "max_phi"))
     max_gamma = int(context.getConfig("Perspective", "max_gamma"))
@@ -180,10 +217,62 @@ def warp_image_random(image, context):
     scale = float(context.getConfig("Perspective", "scale"))
 
     theta, phi, gamma = get_random_angles(max_theta, max_phi, max_gamma, step)
-    result = warp_image(image, theta, phi, gamma, scale, fov)
-
-    return result
-
+    result_image, result_bboxes = warp_image(image, theta, phi, gamma, scale, fov, bboxes)
+    return result_image, result_bboxes
 
 
+#region bounding box operations
+# TODO: Move bbox functions to some utility?
+
+def coords_to_bbox(coords):
+    """Converts (x1,y1,x2,y2) rectangular coordinates to bounding box representation (cx,xy,w,h)"""
+    width = (coords[2] - coords[0]) # w = x2 - x1
+    height = (coords[3] - coords[1]) # h = y2 - y1 
+    center_x = coords[0] + (width / 2) 
+    center_y = coords[1] + (height / 2)
+    return (center_x, center_y, width, height)
+
+
+def bbox_to_coords(bbox):
+    """Converts bounding box representation (cx,xy,w,h) to (x1,y1,x2,y2) coordinates"""
+    cx, cy, w, h = bbox['cx'], bbox['cy'], bbox['w'], bbox['h']
+    x1 = cx - w/2
+    y1 = cy - h/2
+    x2 = x1 + w
+    y2 = y1 + h
+
+    return (int(x1), int(y1), int(x2), int(y2))
+
+
+def get_bbox_vertices(bbox):
+    """Returns a clock-wise ordered list of vertices of a bbox, accounting for rotation"""
+    bbox_coords = bbox_to_coords(bbox)
+    bbox_vertices = [
+        [bbox_coords[0], bbox_coords[1]],
+        [bbox_coords[2], bbox_coords[1]],
+        [bbox_coords[2], bbox_coords[3]],
+        [bbox_coords[0], bbox_coords[3]]
+    ]
+    cx, cy, w, h = bbox['cx'], bbox['cy'], bbox['w'], bbox['h']
+    angle = np.deg2rad(bbox['angle']) # Calculations need to be done in radians
+    if angle != 0: # Calculate new coordinates if bbox is rotated
+        for vertex in bbox_vertices:
+            temp_x = vertex[0] - cx
+            temp_y = vertex[1] - cy
+            rot_x = (temp_x * math.cos(angle)) - (temp_y * math.sin(angle)) + cx
+            rot_y = (temp_x * math.sin(angle)) + (temp_y * math.cos(angle)) + cy
+            vertex[0] = rot_x
+            vertex[1] = rot_y
+
+    return bbox_vertices
+
+def get_centroid(vertices):
+    """Calculates polygon centroid from a list of vertices"""
+    verts_x = [v[0] for v in vertices]
+    verts_y = [v[1] for v in vertices]
+    centroid_x = sum(verts_x) / len(vertices)
+    centroid_y = sum(verts_y) / len(vertices)
     
+    return [centroid_x, centroid_y]
+
+#endregion

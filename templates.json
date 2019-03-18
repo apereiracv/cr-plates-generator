@@ -7,10 +7,11 @@
         "plate-number": [
             {
                 "regex": "[0-9][0-9][0-9][0-9][0-9][0-9]",
-                "position": [180, 60],
+                "position": [160, 200],
                 "font": "roadgeek-2005-engschrift.ttf",
                 "color": "#152d62",
-                "size": 470
+                "size": 470,
+                "spacing": 10
             }
         ]
     },
@@ -21,10 +22,11 @@
         "plate-number": [
             {
                 "regex": "[A-Z][A-Z][A-Z]-[0-9][0-9][0-9]",
-                "position": [60, 60],
+                "position": [60, 200],
                 "font": "roadgeek-2005-engschrift.ttf",
                 "color": "#152d62",
-                "size": 450
+                "size": 450,
+                "spacing": 0
             }
         ]
     },
@@ -39,14 +41,16 @@
                 "position": [60, 90],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
-                "size": 250
+                "size": 250,
+                "spacing": 10
             },
             {
                 "regex": "L",
                 "position": [80, 260],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
-                "size": 250
+                "size": 250,
+                "spacing": 10
             }            
         ],
         "plate-number": [
@@ -55,7 +59,8 @@
                 "position": [220, 60],
                 "font": "roadgeek-2005-engschrift.ttf",
                 "color": "#ad180d",
-                "size": 470
+                "size": 470,
+                "spacing": 10
             }
         ]
     },
@@ -69,21 +74,24 @@
                 "position": [60, 90],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
-                "size": 250
+                "size": 250,
+                "spacing": 10
             },
             {
                 "regex": "S",
                 "position": [80, 260],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
-                "size": 250
+                "size": 250,
+                "spacing": 10
             },
             {
                 "regex": "J",
                 "position": [80, 260],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
-                "size": 250
+                "size": 250,
+                "spacing": 10
             }            
         ],
         "plate-number": [
@@ -92,7 +100,8 @@
                 "position": [220, 60],
                 "font": "roadgeek-2005-engschrift.ttf",
                 "color": "#ad180d",
-                "size": 470
+                "size": 470,
+                "spacing": 10
             }
         ]
     }
