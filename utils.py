@@ -19,11 +19,16 @@
 import cv2
 import random
 
-def get_random_item(list):
-    """Returns a random item from a list"""
-    index = random.randrange(len(list))
-    return list[index]
-
+def get_random_item(collection):
+    """Returns a random item from a list or dict"""
+    if isinstance(collection, list):
+        index = random.randrange(len(collection))
+        return collection[index]
+    elif isinstance(collection, dict):
+        index = random.randrange(len(collection.keys()))
+        return list(collection.keys())[index]
+    else:
+        return None
 
 def rescale_image(image, scale_factor):
     """Scales image by a scale factor i.e: 1.5"""

@@ -32,8 +32,8 @@ import utils
 
 RGB_GREEN = (0, 255, 0)
 RGBA_GREEN = (0, 255, 0, 0)
-BBOX_COORDS = {'char': None, 'x1': None, 'x2': None, 'y1': None, 'y2': None, 'angle': None}
-BBOX_WH = {'char': None, 'cx': None, 'cy': None, 'w': None, 'h': None, 'angle': None}
+PLATE_ANNOTATION = {'filename': None, 'class': None, 'cx': None, 'cy': None, 'w': None, 'h': None, 'angle': None, 'text': []}
+BBOX_ANNOTATION = {'class': None, 'cx': None, 'cy': None, 'w': None, 'h': None, 'angle': None}
 
 class Plate(object):
     """Represents a Plate and holds all its attributes"""
@@ -83,7 +83,6 @@ class Plate(object):
         bounding_boxes = []
         last_pos_x = 0
         for char in text:
-            # TODO: Check that bounding boxes and positions are actually inside the image
             # TODO: Separate special characters cases (dash '-')
             (width, baseline), (offset_x, offset_y) = text_font.font.getsize(char)
             height = ascent - offset_y # Some fonts can contain an offset in height (accounted for ascent)
@@ -91,12 +90,12 @@ class Plate(object):
             char_pos_y = text_template["position"][1]
             # Draw character in desired position
             draw.text((char_pos_x - offset_x, char_pos_y - offset_y), char, font=text_font, fill=text_template["color"])
-            new_bbox = copy.copy(BBOX_WH)
+            new_bbox = copy.copy(BBOX_ANNOTATION)
             x1 = (char_pos_x - bbox_padding[0])
             y1 = (char_pos_y - bbox_padding[1])
             x2 = (char_pos_x + width + bbox_padding[0])
             y2 = (char_pos_y + height + bbox_padding[1])
-            new_bbox['char'], new_bbox['angle'] = char, 0
+            new_bbox['class'], new_bbox['angle'] = char, 0
             new_bbox['cx'], new_bbox['cy'], new_bbox['w'], new_bbox['h'] = perspective.coords_to_bbox([x1,y1,x2,y2])
             bounding_boxes.append(new_bbox)
             last_pos_x = last_pos_x + width + text_template["spacing"]
@@ -142,9 +141,10 @@ class Plate(object):
     def save_image(self, path=None):
         """Saves plate image to disk"""
         savePath = path if path is not None else self.context.getConfig("General", "output_path")
-        #ext = '.jpg' if self.image_data.shape[2] == 3 else '.png'
-        savePath = os.path.join(savePath, self.plate_number + '.jpg')
+        savePath = os.path.join(savePath, self.get_filename())
+        savePath = savePath.lower()
         save_data = self.image_data
+        # Eliminate alpha channel to optimize storage
         if save_data.shape[2] == 4:
             save_data = cv2.cvtColor(save_data, cv2.COLOR_RGBA2RGB)
         # Draw bounding boxes if needed
@@ -152,7 +152,20 @@ class Plate(object):
             save_data = self.draw_bboxes()
 
         cv2.imwrite(savePath, save_data)
+        return savePath
 
+
+    def get_annotation(self):
+        """ Creates a JSON annotation of the plate"""
+        # TODO: Add plate bounding box itself
+        annotation = copy.copy(PLATE_ANNOTATION)
+        annotation['filename'] = self.get_filename()
+        annotation['class'] = self.type
+        
+        for bbox in self.bounding_boxes:
+            annotation['text'].append(copy.copy(bbox))
+
+        return annotation
 
 #region Utility functions
     def pil_to_cv2(self, image):
@@ -165,4 +178,6 @@ class Plate(object):
         else:
             return RGBA_GREEN
 
+    def get_filename(self):
+        return "{0}_{1}.jpg".format(self.type, self.plate_number)
 #endregion

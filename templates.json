@@ -7,10 +7,10 @@
         "plate-number": [
             {
                 "regex": "[0-9][0-9][0-9][0-9][0-9][0-9]",
-                "position": [160, 200],
+                "position": [160, 180],
                 "font": "roadgeek-2005-engschrift.ttf",
                 "color": "#152d62",
-                "size": 470,
+                "size": 450,
                 "spacing": 10
             }
         ]
@@ -22,11 +22,37 @@
         "plate-number": [
             {
                 "regex": "[A-Z][A-Z][A-Z]-[0-9][0-9][0-9]",
-                "position": [60, 200],
+                "position": [80, 180],
                 "font": "roadgeek-2005-engschrift.ttf",
                 "color": "#152d62",
-                "size": 450,
+                "size": 430,
                 "spacing": 0
+            }
+        ]
+    },
+    "motorcycle": {
+        "base-image": [
+            "cr-blue-flag.jpg",
+            "cr-blue-no-flag.jpg"
+        ],
+        "extra-text": [
+            {
+                "regex": "M",
+                "position": [70, 260],
+                "font": "biosolid-regular.ttf",
+                "color": "#152d62",
+                "size": 230,
+                "spacing": 10
+            }            
+        ],
+        "plate-number": [
+            {
+                "regex": "[0-9][0-9][0-9][0-9][0-9][0-9]",
+                "position": [240, 180],
+                "font": "roadgeek-2005-engschrift.ttf",
+                "color": "#152d62",
+                "size": 420,
+                "spacing": 10
             }
         ]
     },
@@ -38,7 +64,7 @@
         "extra-text": [
             {
                 "regex": "C",
-                "position": [60, 90],
+                "position": [60, 180],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
                 "size": 250,
@@ -46,7 +72,7 @@
             },
             {
                 "regex": "L",
-                "position": [80, 260],
+                "position": [80, 340],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
                 "size": 250,
@@ -56,10 +82,36 @@
         "plate-number": [
             {
                 "regex": "[0-9][0-9][0-9][0-9][0-9][0-9]",
-                "position": [220, 60],
+                "position": [220, 180],
                 "font": "roadgeek-2005-engschrift.ttf",
                 "color": "#ad180d",
-                "size": 470,
+                "size": 440,
+                "spacing": 10
+            }
+        ]
+    },
+    "truck": {
+        "base-image": [
+            "cr-red-flag.jpg",
+            "cr-red-no-flag.jpg"
+        ],
+        "extra-text": [
+            {
+                "regex": "C",
+                "position": [60, 180],
+                "font": "roadgeek-2005-engschrift.ttf",
+                "color": "#ad180d",
+                "size": 440,
+                "spacing": 10
+            }            
+        ],
+        "plate-number": [
+            {
+                "regex": "[0-9][0-9][0-9][0-9][0-9][0-9]",
+                "position": [260, 180],
+                "font": "roadgeek-2005-engschrift.ttf",
+                "color": "#ad180d",
+                "size": 440,
                 "spacing": 10
             }
         ]
@@ -71,36 +123,61 @@
         "extra-text": [
             {
                 "regex": "T",
-                "position": [60, 90],
+                "position": [100, 90],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
-                "size": 250,
+                "size": 200,
                 "spacing": 10
             },
             {
                 "regex": "S",
-                "position": [80, 260],
+                "position": [90, 260],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
-                "size": 250,
+                "size": 200,
                 "spacing": 10
             },
             {
                 "regex": "J",
-                "position": [80, 260],
+                "position": [90, 430],
                 "font": "biosolid-regular.ttf",
                 "color": "#ad180d",
-                "size": 250,
+                "size": 200,
                 "spacing": 10
             }            
         ],
         "plate-number": [
             {
                 "regex": "[0-9][0-9][0-9][0-9]",
-                "position": [220, 60],
+                "position": [360, 180],
                 "font": "roadgeek-2005-engschrift.ttf",
                 "color": "#ad180d",
                 "size": 470,
+                "spacing": 10
+            }
+        ]
+    },
+    "disabled": {
+        "base-image": [
+            "cr-disabled.jpg"
+        ],
+        "extra-text": [
+            {
+                "regex": "D",
+                "position": [440, 180],
+                "font": "roadgeek-2005-engschrift.ttf",
+                "color": "#152d62",
+                "size": 450,
+                "spacing": 10
+            }            
+        ],
+        "plate-number": [
+            {
+                "regex": "[0-9][0-9][0-9]",
+                "position": [670, 180],
+                "font": "roadgeek-2005-engschrift.ttf",
+                "color": "#152d62",
+                "size": 450,
                 "spacing": 10
             }
         ]

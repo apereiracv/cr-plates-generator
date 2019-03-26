@@ -24,23 +24,37 @@ import context
 import jsonutil
 import perspective
 import scene
+import utils
 
-appContext = context.Context('configuration.cfg')
-templates = jsonutil.deserializeJson('templates.json')
-#plate1 = plate.Plate(appContext, 'car-old', templates['car-old'])
-plate2 = plate.Plate(appContext, 'car-new', templates['car-new'])
-#plate3 = plate.Plate(appContext, 'small-truck', templates['small-truck'])
-#plate4 = plate.Plate(appContext, 'taxi', templates['taxi'])
 
-# plate1.image_data, plate1.bounding_boxes = perspective.warp_image_random(plate1.image_data, plate1.bounding_boxes, appContext)
-# plate1.image_data, plate1.bounding_boxes = scene.add_backgroud(plate1.image_data, plate1.bounding_boxes, appContext)
+if __name__ == "__main__":
+    # Initialize settings
+    appContext = context.Context('configuration.cfg')
+    templates = jsonutil.deserializeJson('templates.json')
 
-plate2.random_resize()
-plate2.image_data, plate2.bounding_boxes = perspective.warp_image_random(plate2.image_data, plate2.bounding_boxes, appContext)
-plate2.image_data, plate2.bounding_boxes = scene.add_backgroud(plate2.image_data, plate2.bounding_boxes, appContext)
+    dataset_size = int(appContext.getConfig('General', 'dataset_size'))
+    output_path = appContext.getConfig('General', 'output_path')
+    annotation_file = 'annotations.json'
+    annotations = []
 
-ouput_path = appContext.getConfig('General', 'output_path')
-# plate1.save_image(ouput_path)
-plate2.save_image(ouput_path)
-# plate3.save_image(ouput_path)
-# plate4.save_image(ouput_path)
+    if not os.path.exists(output_path): os.makedirs(output_path)
+    
+    # Generate random plates
+    for i in range(dataset_size):
+        # Generate from random template
+        plate_type = utils.get_random_item(templates)
+        new_plate = plate.Plate(appContext, plate_type, templates[plate_type])
+    
+        # Change perspective, size and background of plate randomly
+        new_plate.random_resize()
+        new_plate.image_data, new_plate.bounding_boxes = perspective.warp_image_random(new_plate.image_data, new_plate.bounding_boxes, appContext)
+        new_plate.image_data, new_plate.bounding_boxes = scene.add_backgroud(new_plate.image_data, new_plate.bounding_boxes, appContext)
+
+        # Generate annotation and image file
+        annotations.append(new_plate.get_annotation())
+        new_plate.save_image(output_path)
+
+    # Save annotations
+    with open(os.path.join(output_path, annotation_file), 'w') as f:
+        f.write(str(annotations))
+
