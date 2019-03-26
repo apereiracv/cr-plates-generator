@@ -39,13 +39,12 @@ if __name__ == "__main__":
 
     if not os.path.exists(output_path): os.makedirs(output_path)
     
-    # Generate random plates
     for i in range(dataset_size):
         # Generate from random template
         plate_type = utils.get_random_item(templates)
         new_plate = plate.Plate(appContext, plate_type, templates[plate_type])
     
-        # Change perspective, size and background of plate randomly
+        # Change perspective, size and background
         new_plate.random_resize()
         new_plate.image_data, new_plate.bounding_boxes = perspective.warp_image_random(new_plate.image_data, new_plate.bounding_boxes, appContext)
         new_plate.image_data, new_plate.bounding_boxes = scene.add_backgroud(new_plate.image_data, new_plate.bounding_boxes, appContext)
