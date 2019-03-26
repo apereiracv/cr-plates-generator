@@ -35,6 +35,7 @@ plate2 = plate.Plate(appContext, 'car-new', templates['car-new'])
 # plate1.image_data, plate1.bounding_boxes = perspective.warp_image_random(plate1.image_data, plate1.bounding_boxes, appContext)
 # plate1.image_data, plate1.bounding_boxes = scene.add_backgroud(plate1.image_data, plate1.bounding_boxes, appContext)
 
+plate2.random_resize()
 plate2.image_data, plate2.bounding_boxes = perspective.warp_image_random(plate2.image_data, plate2.bounding_boxes, appContext)
 plate2.image_data, plate2.bounding_boxes = scene.add_backgroud(plate2.image_data, plate2.bounding_boxes, appContext)
 

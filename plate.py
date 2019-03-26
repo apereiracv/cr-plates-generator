@@ -18,7 +18,7 @@
 #!/usr/bin/python
 
 import os
-import random
+
 import ast
 import copy
 
@@ -28,6 +28,7 @@ import numpy as np
 import PIL.Image, PIL.ImageFont, PIL.ImageDraw
 
 import perspective
+import utils
 
 RGB_GREEN = (0, 255, 0)
 RGBA_GREEN = (0, 255, 0, 0)
@@ -53,13 +54,12 @@ class Plate(object):
     def __autogenerate(self, template):
         """Generates plate based on template provided"""
         # Open base image template 
-        self.base_file = self.get_random_item(template["base-image"])
+        self.base_file = utils.get_random_item(template["base-image"])
         image_path = os.path.join(self.context.getConfig("General", "templates_path"), self.base_file)
         self.image_data = PIL.Image.open(image_path)
 
-        # TODO: Add bounding boxes for annotations
         # Generate & draw plate number
-        plate_template = self.get_random_item(template["plate-number"])
+        plate_template = utils.get_random_item(template["plate-number"])
         self.plate_number, self.bounding_boxes = self.draw_regex(plate_template)
 
         # Draw extra text, if any
@@ -79,7 +79,7 @@ class Plate(object):
         text = rstr.xeger(text_template["regex"])
         ascent, descent = text_font.getmetrics()
         # Draw each character and calculate its bounding box
-        bbox_padding = ast.literal_eval(self.context.getConfig("Text", "bbox_padding"))
+        bbox_padding = ast.literal_eval(self.context.getConfig("Image", "bbox_padding"))
         bounding_boxes = []
         last_pos_x = 0
         for char in text:
@@ -117,6 +117,28 @@ class Plate(object):
         return result_image
 
 
+    def random_resize(self):
+        plate_scales = ast.literal_eval(self.context.getConfig('Image', 'plate_scales'))
+        scale_factor = utils.get_random_item(plate_scales)
+        self.resize_image(scale_factor)
+        self.resize_bboxes(scale_factor)
+
+
+    def resize_image(self, scale_factor):
+        """Resize plate image by a scale factor"""
+        interpol = cv2.INTER_CUBIC if scale_factor > 1 else cv2.INTER_AREA
+        self.image_data = cv2.resize(self.image_data, None, fx=scale_factor, fy=scale_factor, interpolation=interpol)
+
+
+    def resize_bboxes(self, scale_factor):
+        """Re-calculates bounding boxes according to a scale factor"""
+        for bbox in self.bounding_boxes:
+            bbox['cx'] = bbox['cx'] * scale_factor
+            bbox['cy'] = bbox['cy'] * scale_factor
+            bbox['w'] = bbox['w'] * scale_factor
+            bbox['h'] = bbox['h'] * scale_factor
+
+
     def save_image(self, path=None):
         """Saves plate image to disk"""
         savePath = path if path is not None else self.context.getConfig("General", "output_path")
@@ -126,20 +148,15 @@ class Plate(object):
         if save_data.shape[2] == 4:
             save_data = cv2.cvtColor(save_data, cv2.COLOR_RGBA2RGB)
         # Draw bounding boxes if needed
-        if self.context.getBoolean("Text", "draw_bboxes"):
+        if self.context.getBoolean("Image", "draw_bboxes"):
             save_data = self.draw_bboxes()
 
         cv2.imwrite(savePath, save_data)
 
 
+#region Utility functions
     def pil_to_cv2(self, image):
         return cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-
-
-    def get_random_item(self, list):
-        # TODO: Move to utilities module
-        index = random.randrange(len(list))
-        return list[index]
 
 
     def get_color(self):
@@ -147,3 +164,5 @@ class Plate(object):
             return RGB_GREEN
         else:
             return RGBA_GREEN
+
+#endregion

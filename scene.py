@@ -21,16 +21,25 @@ import os
 import cv2
 import random
 import copy
+import ast
+
+import utils
 
 
 def get_random_bg(context):
-    # TODO: Add checks to make sure that background image size is able to contain the plate
+    """Returns a random background image from configured path"""
+
     bg_path = context.getConfig('General', 'backgrounds_path')
     bg_list = os.listdir(bg_path)
     selected_bg = bg_list[random.randrange(len(bg_list))]
     bg_image = cv2.imread(os.path.join(bg_path, selected_bg))
 
-    # Add alpha channel to image if not present
+    # Resize image according to the list of configured sizes
+    sizes = ast.literal_eval(context.getConfig('Image', 'bg_sizes'))
+    size = utils.get_random_item(sizes)
+    bg_image = utils.resize_image(bg_image, size)
+
+    # Add alpha channel to image if not present, this is to add foreground
     if bg_image.shape[2] == 3:
         bg_image = cv2.cvtColor(bg_image, cv2.COLOR_RGB2RGBA)
     
@@ -38,6 +47,11 @@ def get_random_bg(context):
 
 
 def get_random_position(image_width, image_height, bg_width, bg_height):
+    """Calculates a random position for an image inside another"""
+    
+    assert(bg_width > image_width)
+    assert(bg_height > image_height)
+
     max_width = bg_width - image_width
     max_height = bg_height - image_height
 
@@ -53,14 +67,13 @@ def add_backgroud(image, bboxes, context):
     result_image = get_random_bg(context)
     x1, y1, x2, y2 = get_random_position(image.shape[1], image.shape[0], result_image.shape[1], result_image.shape[0])
     
+    # Add images by alpha channel
     alpha_image = image[:, :, 3] / 255.0
     alpha_bg = 1.0 - alpha_image
-
-    # Add images by alpha channel
     for channel in range(0, 3):
         result_image[y1:y2, x1:x2, channel] = (alpha_image * image[:, :, channel] + alpha_bg * result_image[y1:y2, x1:x2, channel])
 
-    # Modify bounding boxes with new position within the image
+    # Modify bounding boxes to match new position within the image
     result_bboxes = None
     if bboxes:
         result_bboxes = []
@@ -71,3 +84,5 @@ def add_backgroud(image, bboxes, context):
             result_bboxes.append(new_bbox)
 
     return result_image, result_bboxes
+
+
