@@ -49,12 +49,13 @@ The following is a description of all the settings on this file.
 ### ```templates.cfg```
 [Pending]
 
-### Authors
+## Authors
 * **Alejandro Pereira** - [Home Page](https://github.com/alejopc03)
 
-### License
+## License
 This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE.md](https://github.com/alejopc03/cr-plates-generator/blob/master/LICENSE) file for details
-### References
+
+## References
 
  - Perspective transformations: https://nbviewer.jupyter.org/github/manisoftwartist/perspectiveproj/blob/master/perspective.ipynb
  - Another plate generator: https://matthewearl.github.io/2016/05/06/cnn-anpr/
