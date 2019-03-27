@@ -1,13 +1,15 @@
 # cr-plates-generator
->Costa Rica license plate dataset generator for computer vision
+Costa Rica license plate generator for computer vision
 
 ### Features
-  - Plate formats: car, motorcycle, small trucks, trucks, taxi, disabled drivers.
-  - Perspective transforms, size, rotations, random backgrounds.
+  - Plate formats: car, motorcycle, trucks, taxi, disabled drivers.
+  - Perspective rotations, size and random backgrounds.
   - Annotations with character bounding boxes (class, cx, cy, w, h)
   - ```configuration.cfg``` and ```templates.json``` files for customization.
+  
 ### Examples
 [Pending]
+
 ## Getting Started
 ### Prerequisites
  - Python >= 3.6.0
@@ -24,13 +26,14 @@
 ## Settings
 ### ```configuration.cfg```
 The following is a description of all the settings on this file.
+
 |Setting|Description|Value
 |--|--|--|
 |**[General]**|||
 | dataset_size | Quantity of images to generate | int|
 | templates_path | Path to directory containing base plate images | string|
 | templates_config | Path to JSON configuration for each type of plate | string|
-|**[Image]**||--|
+|**[Image]**|||
 | resize_plate| Apply resizing to the base plate images setting | bool|
 | plate_scales| List of scaling factors to be used | list|
 | resize_bg| Apply resizing to background images to a fixed size | bool|
@@ -41,6 +44,7 @@ The following is a description of all the settings on this file.
 | max_theta|Maximum angle (degrees) to rotate plate over z-plane | float|
 | max_phi| Maximum angle (degrees) to rotate plate over y-plane | float|
 | max_gamma| Maximum angle (degrees) to rotate plate over x-plane | float|
+
 
 ### ```templates.cfg```
 [Pending]
