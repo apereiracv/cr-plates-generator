@@ -18,15 +18,12 @@
 #!/usr/bin/python
 
 import os
-
 import ast
 import copy
-
 import cv2
 import rstr
 import numpy as np
 import PIL.Image, PIL.ImageFont, PIL.ImageDraw
-
 import perspective
 import utils
 
@@ -34,6 +31,8 @@ RGB_GREEN = (0, 255, 0)
 RGBA_GREEN = (0, 255, 0, 0)
 PLATE_ANNOTATION = {'filename': None, 'class': None, 'cx': None, 'cy': None, 'w': None, 'h': None, 'angle': None, 'text': []}
 BBOX_ANNOTATION = {'class': None, 'cx': None, 'cy': None, 'w': None, 'h': None, 'angle': None}
+SPECIAL_CHARS = ['-']
+
 
 class Plate(object):
     """Represents a Plate and holds all its attributes"""
@@ -83,11 +82,13 @@ class Plate(object):
         bounding_boxes = []
         last_pos_x = 0
         for char in text:
-            # TODO: Separate special characters cases (dash '-')
             (width, baseline), (offset_x, offset_y) = text_font.font.getsize(char)
             height = ascent - offset_y # Some fonts can contain an offset in height (accounted for ascent)
             char_pos_x = text_template["position"][0] + last_pos_x
             char_pos_y = text_template["position"][1]
+            if char == '-': # Dash character is offsetted further
+                char_pos_x += offset_x / 2
+                char_pos_y += offset_y / 2
             # Draw character in desired position
             draw.text((char_pos_x - offset_x, char_pos_y - offset_y), char, font=text_font, fill=text_template["color"])
             new_bbox = copy.copy(BBOX_ANNOTATION)

@@ -18,6 +18,7 @@
 #!/usr/bin/python
 
 import os
+import glob
 
 import plate
 import context
@@ -37,7 +38,15 @@ if __name__ == "__main__":
     annotation_file = 'annotations.json'
     annotations = []
 
-    if not os.path.exists(output_path): os.makedirs(output_path)
+    # Create output directory or clean it
+    clear_output = appContext.getBoolean('General', 'clear_output')
+    if not os.path.exists(output_path): 
+        os.makedirs(output_path)
+    elif clear_output:
+        files = glob.glob(os.path.join(output_path, '*'))
+        for f in files:
+            os.remove(f)
+
     
     for i in range(dataset_size):
         # Generate from random template
