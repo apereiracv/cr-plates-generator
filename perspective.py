@@ -68,7 +68,6 @@ def get_rotation_matrix(rotation_angles):
 
 
 def get_perspective_transform_estimation(pts_in, pts_out, width, height, side_length):
-    # TODO: This transformation might not be needed
     pts_in_2D = pts_in[0,:]
     pts_out_2D = pts_out[0,:]
 
@@ -160,7 +159,7 @@ def cut_warped_image(warped_image, source_width, source_height, matrix):
     return result, [p1, p2]
 
 
-def warp_bboxes(bboxes, theta, matrix, crop_points=None):
+def warp_bboxes(bboxes, matrix, crop_points=None):
     """Re-calculates new bounding boxes based on transformation matrix used for an image"""
     warped_bboxes = []
     for bbox in bboxes:
@@ -172,19 +171,20 @@ def warp_bboxes(bboxes, theta, matrix, crop_points=None):
             [bbox_coords[2], bbox_coords[3]]
         ]], dtype='float32')
 
+        # Find the new rectangle bbox that fits the warped bbox
         warped_coords = cv2.perspectiveTransform(bbox_points, matrix)[0]
-        # Get maximum width, height of the polygon
-        new_width = max(warped_coords[1][0] - warped_coords[0][0], warped_coords[3][0] - warped_coords[2][0])
-        new_height = max(warped_coords[2][1] - warped_coords[0][1], warped_coords[3][1] - warped_coords[1][1])
-        new_center = get_centroid(warped_coords)
+        bbox_rect = cv2.minAreaRect(warped_coords)
+
+        new_bbox = copy.copy(bbox)
+        new_bbox['cx'], new_bbox['cy'] = bbox_rect[0][0], bbox_rect[0][1]
+        new_bbox['w'], new_bbox['h'] = bbox_rect[1][0], bbox_rect[1][1]
+        new_bbox['angle'] = bbox_rect[2]
+
         # Apply cropping to bbox if points provided
         if crop_points:
-            new_center[0] -= crop_points[0][0]
-            new_center[1] -= crop_points[0][1]
-        new_bbox = {}
-        new_bbox['angle'] = theta
-        new_bbox['w'], new_bbox['h'] = new_width, new_height
-        new_bbox['cx'], new_bbox['cy'] = new_center[0], new_center[1]
+            new_bbox['cx'] -= crop_points[0][0]
+            new_bbox['cy'] -= crop_points[0][1]
+        
         warped_bboxes.append(new_bbox)
 
     return warped_bboxes
@@ -202,7 +202,7 @@ def warp_image(image, theta, phi, gamma, scale, fovy, bboxes=None):
     result_image, crop_points = cut_warped_image(result_image, image.shape[1], image.shape[0], matrix)
     result_bboxes = None
     if bboxes: 
-        result_bboxes = warp_bboxes(bboxes, theta, matrix, crop_points)
+        result_bboxes = warp_bboxes(bboxes, matrix, crop_points)
 
     return result_image, result_bboxes
 
@@ -222,7 +222,7 @@ def warp_image_random(image, bboxes, context):
 
 
 #region bounding box operations
-# TODO: Move bbox functions to some utility?
+# TODO: Move bbox functions to utility?
 
 def coords_to_bbox(coords):
     """Converts (x1,y1,x2,y2) rectangular coordinates to bounding box representation (cx,xy,w,h)"""
