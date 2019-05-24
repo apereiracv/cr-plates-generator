@@ -26,6 +26,7 @@ import jsonutil
 import perspective
 import scene
 import utils
+import annotations
 
 
 if __name__ == "__main__":
@@ -35,9 +36,9 @@ if __name__ == "__main__":
 
     dataset_size = int(appContext.getConfig('General', 'dataset_size'))
     output_path = appContext.getConfig('General', 'output_path')
-    annotation_file = 'annotations.json'
-    annotations = []
-
+    annotator_type = appContext.getConfig('General', 'annotation_type')
+    annotator = annotations.AnnotatorFactory.get_annotator(annotator_type)
+    
     # Create output directory or clean it
     clear_output = appContext.getBoolean('General', 'clear_output')
     if not os.path.exists(output_path): 
@@ -59,10 +60,9 @@ if __name__ == "__main__":
         new_plate.image_data, new_plate.bounding_boxes = scene.add_backgroud(new_plate.image_data, new_plate.bounding_boxes, appContext)
 
         # Generate annotation and image file
-        annotations.append(new_plate.get_annotation())
+        annotator.append_annotation(new_plate)
         new_plate.save_image(output_path)
 
     # Save annotations
-    with open(os.path.join(output_path, annotation_file), 'w') as f:
-        f.write(str(annotations))
+    annotator.save_annotations(output_path)
 

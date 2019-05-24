@@ -159,7 +159,7 @@ def cut_warped_image(warped_image, source_width, source_height, matrix):
     return result, [p1, p2]
 
 
-def warp_bboxes(bboxes, matrix, crop_points=None):
+def warp_bboxes(bboxes, matrix, crop_points=None, rotate_bboxes=False):
     """Re-calculates new bounding boxes based on transformation matrix used for an image"""
     warped_bboxes = []
     for bbox in bboxes:
@@ -173,13 +173,21 @@ def warp_bboxes(bboxes, matrix, crop_points=None):
 
         # Find the new rectangle bbox that fits the warped bbox
         warped_coords = cv2.perspectiveTransform(bbox_points, matrix)[0]
-        bbox_rect = cv2.minAreaRect(warped_coords)
-
         new_bbox = copy.copy(bbox)
-        new_bbox['cx'], new_bbox['cy'] = bbox_rect[0][0], bbox_rect[0][1]
-        new_bbox['w'], new_bbox['h'] = bbox_rect[1][0], bbox_rect[1][1]
-        new_bbox['angle'] = bbox_rect[2]
-
+        if rotate_bboxes:
+            # minAreaRect = (cx,cy),(w,h),angle
+            bbox_rect = cv2.minAreaRect(warped_coords)
+            new_bbox['cx'], new_bbox['cy'] = bbox_rect[0][0], bbox_rect[0][1]
+            new_bbox['w'], new_bbox['h'] = bbox_rect[1][0], bbox_rect[1][1]
+            new_bbox['angle'] = bbox_rect[2]
+        else:
+            # boundingRect = (x1,y1),(w,h)
+            bbox_rect = cv2.boundingRect(warped_coords)
+            new_bbox['w'], new_bbox['h'] = bbox_rect[2], bbox_rect[3]
+            # cx = x1 + w/2, cy = x2 + h/2
+            new_bbox['cx'], new_bbox['cy'] = bbox_rect[0] + (bbox_rect[2]/2), bbox_rect[1] + (bbox_rect[3]/2)
+            new_bbox['angle'] = 0
+        
         # Apply cropping to bbox if points provided
         if crop_points:
             new_bbox['cx'] -= crop_points[0][0]
@@ -190,7 +198,7 @@ def warp_bboxes(bboxes, matrix, crop_points=None):
     return warped_bboxes
 
 
-def warp_image(image, theta, phi, gamma, scale, fovy, bboxes=None):
+def warp_image(image, theta, phi, gamma, scale, fovy, bboxes=None, rotate_bboxes=False):
     """Changes the perspective of an image according to x,y,z angles"""
     height, width, _ = image.shape
     matrix, side_length = get_warp_matrix(width, height, theta, phi, gamma, scale, fovy) # Compute warp matrix
@@ -202,7 +210,7 @@ def warp_image(image, theta, phi, gamma, scale, fovy, bboxes=None):
     result_image, crop_points = cut_warped_image(result_image, image.shape[1], image.shape[0], matrix)
     result_bboxes = None
     if bboxes: 
-        result_bboxes = warp_bboxes(bboxes, matrix, crop_points)
+        result_bboxes = warp_bboxes(bboxes, matrix, crop_points=crop_points, rotate=rotate_bboxes)
 
     return result_image, result_bboxes
 
@@ -215,9 +223,10 @@ def warp_image_random(image, bboxes, context):
     step = int(context.getConfig("Perspective", "rotation_step"))
     fov = int(context.getConfig("Perspective", "field_of_view"))
     scale = float(context.getConfig("Perspective", "scale"))
-
+    rotate_bboxes = context.getBoolean("Image", "rotate_bboxes")
     theta, phi, gamma = get_random_angles(max_theta, max_phi, max_gamma, step)
-    result_image, result_bboxes = warp_image(image, theta, phi, gamma, scale, fov, bboxes)
+
+    result_image, result_bboxes = warp_image(image, theta, phi, gamma, scale, fov, bboxes, rotate_bboxes)
     return result_image, result_bboxes
 
 

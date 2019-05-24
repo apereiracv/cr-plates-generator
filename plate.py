@@ -133,6 +133,7 @@ class Plate(object):
         pts = np.array([vertices], np.int32)
         cv2.polylines(image, [pts], True, self.get_color(), 2)
 
+
     def random_resize(self):
         plate_scales = ast.literal_eval(self.context.getConfig('Image', 'plate_scales'))
         scale_factor = utils.get_random_item(plate_scales)
