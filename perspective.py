@@ -210,7 +210,7 @@ def warp_image(image, theta, phi, gamma, scale, fovy, bboxes=None, rotate_bboxes
     result_image, crop_points = cut_warped_image(result_image, image.shape[1], image.shape[0], matrix)
     result_bboxes = None
     if bboxes: 
-        result_bboxes = warp_bboxes(bboxes, matrix, crop_points=crop_points, rotate=rotate_bboxes)
+        result_bboxes = warp_bboxes(bboxes, matrix, crop_points=crop_points, rotate_bboxes=rotate_bboxes)
 
     return result_image, result_bboxes
 
