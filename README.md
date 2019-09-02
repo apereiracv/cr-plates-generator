@@ -41,9 +41,9 @@ The following is a description of all the settings on this file.
 | draw_bboxes| Whether to draw bounding boxes (Use for testing only)| bool|
 | bbox_padding| Spacing between bbox and inner object (px)| int|
 |**[Perspective]**|||
-| max_theta|Maximum angle (degrees) to rotate plate over z-plane | float|
-| max_phi| Maximum angle (degrees) to rotate plate over y-plane | float|
-| max_gamma| Maximum angle (degrees) to rotate plate over x-plane | float|
+| theta_range|Maximum angle (degrees) to rotate plate over z-plane | float|
+| phi_range| Maximum angle (degrees) to rotate plate over y-plane | float|
+| gamma_range| Maximum angle (degrees) to rotate plate over x-plane | float|
 
 
 ### ```templates.cfg```

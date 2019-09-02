@@ -22,6 +22,7 @@
 import math
 import random
 import copy
+import ast
 from functools import reduce
 
 import numpy as np
@@ -130,10 +131,10 @@ def get_warp_matrix(width, height, theta, phi, gamma, scale, field_vision):
     return M33, int(side_length)
 
 
-def get_random_angles(max_theta, max_phi, max_gamma, step):
-    theta = random.randrange(-max_theta, max_theta, step)
-    phi = random.randrange(-max_phi, max_phi, step)
-    gamma = random.randrange(-max_gamma, max_gamma, step)
+def get_random_angles(theta_range, phi_range, gamma_range, step):
+    theta = random.randrange(theta_range[0], theta_range[1], step)
+    phi = random.randrange(phi_range[0], phi_range[1], step)
+    gamma = random.randrange(gamma_range[0], gamma_range[1], step)
 
     return (theta, phi, gamma)
 
@@ -217,14 +218,14 @@ def warp_image(image, theta, phi, gamma, scale, fovy, bboxes=None, rotate_bboxes
 
 def warp_image_random(image, bboxes, context):
     """Changes the perspective viewing angles of an image by a random number"""
-    max_theta = int(context.getConfig("Perspective", "max_theta"))
-    max_phi   = int(context.getConfig("Perspective", "max_phi"))
-    max_gamma = int(context.getConfig("Perspective", "max_gamma"))
+    theta_range = ast.literal_eval(context.getConfig("Perspective", "theta_range"))
+    phi_range   = ast.literal_eval(context.getConfig("Perspective", "phi_range"))
+    gamma_range = ast.literal_eval(context.getConfig("Perspective", "gamma_range"))
     step = int(context.getConfig("Perspective", "rotation_step"))
     fov = int(context.getConfig("Perspective", "field_of_view"))
     scale = float(context.getConfig("Perspective", "scale"))
     rotate_bboxes = context.getBoolean("Image", "rotate_bboxes")
-    theta, phi, gamma = get_random_angles(max_theta, max_phi, max_gamma, step)
+    theta, phi, gamma = get_random_angles(theta_range, phi_range, gamma_range, step)
 
     result_image, result_bboxes = warp_image(image, theta, phi, gamma, scale, fov, bboxes, rotate_bboxes)
     return result_image, result_bboxes
