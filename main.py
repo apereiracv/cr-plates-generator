@@ -19,6 +19,7 @@
 
 import os
 import glob
+import time
 
 import plate
 import context
@@ -27,6 +28,7 @@ import perspective
 import scene
 import utils
 import annotations
+
 
 
 if __name__ == "__main__":
@@ -48,12 +50,11 @@ if __name__ == "__main__":
         for f in files:
             os.remove(f)
 
-    
     for i in range(dataset_size):
         # Generate from random template
         plate_type = utils.get_random_item(templates)
         new_plate = plate.Plate(appContext, plate_type, templates[plate_type])
-    
+        
         # Change perspective, size and background
         new_plate.random_resize()
         new_plate.image_data, new_plate.bounding_boxes = perspective.warp_image_random(new_plate.image_data, new_plate.bounding_boxes, appContext)
@@ -62,6 +63,7 @@ if __name__ == "__main__":
         # Generate annotation and image file
         annotator.append_annotation(new_plate)
         new_plate.save_image(output_path)
+        time.sleep(0.5) # TODO: Find solution for random images that are not written to disk
 
     # Save annotations
     annotator.save_annotations(output_path)
