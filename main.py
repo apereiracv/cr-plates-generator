@@ -38,8 +38,8 @@ if __name__ == "__main__":
 
     dataset_size = int(appContext.getConfig('General', 'dataset_size'))
     output_path = appContext.getConfig('General', 'output_path')
-    annotator_type = appContext.getConfig('General', 'annotation_type')
-    annotator = annotations.AnnotatorFactory.get_annotator(annotator_type)
+    annotation_writer_type = appContext.getConfig('General', 'annotation_writer_type')
+    annotator = annotations.AnnotatioWriterFactory.getWriter(annotation_writer_type)
     
     # Create output directory or clean it
     clear_output = appContext.getBoolean('General', 'clear_output')

@@ -15,26 +15,41 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>
 
 #######################################################################
+
 #!/usr/bin/python
 import os
 import copy
 import pandas as pd
 import inspect
 import sys
+import csv
 
-class AnnotatorFactory(object):
-    """Factory class for annotators"""
+# TODO: We could have a generic factory
+class AnnotatioReaderFactory(object):
+    """Factory class for annotation readers"""
+
     @staticmethod
-    def get_annotator(prefix):
-        """Factory method to create annotators according to the prefix"""
+    def getReader(prefix):
+        """Factory method to create annotation readers according to the prefix"""
+        classSuffix = AnnotationReader.__name__
+        readerClassName = "{}{}".format(prefix.upper(), classSuffix)
+        reader = getattr(sys.modules[__name__], readerClassName)()
+        return reader
 
-        annotatorClassName = "{0}Annotator".format(prefix.upper())
-        annotator = getattr(sys.modules[__name__], annotatorClassName)()
-        return annotator
+
+class AnnotatioWriterFactory(object):
+    """Factory class for annotation writers"""
+    @staticmethod
+    def getWriter(prefix):
+        """Factory method to create annotation writers according to the prefix"""
+        classSuffix = AnnotationWriter.__name__
+        writerClassName = "{}{}".format(prefix.upper(), classSuffix)
+        writer = getattr(sys.modules[__name__], writerClassName)()
+        return writer
 
 
-class Annotator(object):
-    """Defines a generic annotator for plates bounding boxes"""
+class AnnotationWriter(object):
+    """Defines a generic annotation writer"""
 
     def __init__(self):
         self.annotations = None
@@ -53,13 +68,13 @@ class Annotator(object):
         self.annotations.append(new_anotation)
 
 
-class JSONAnnotator(Annotator):
-    """Annotator implementation for original JSON format
+class JSONAnnotationWriter(AnnotationWriter):
+    """Reader implementation for original JSON format
         Bounding box format: cx, cy, w, h, angle
     """
 
     def __init__(self):
-        super(JSONAnnotator, self).__init__()
+        super(JSONAnnotationWriter, self).__init__()
         self.plate_annotation = {'filename': None, 'class': None, 'bboxes': []}
         self.bbox_annotation = {'class': None, 'cx': None, 'cy': None, 'w': None, 'h': None, 'angle': 0}
         self.annotations = []
@@ -82,13 +97,13 @@ class JSONAnnotator(Annotator):
             f.write(str(self.annotations))
 
 
-class TFAnnotator(Annotator):
-    """Annotator implementation for Tensorflow .csv format
+class TFAnnotationWriter(AnnotationWriter):
+    """Writer implementation for Tensorflow .csv format
         Format: filename, img_width, img_height, class, xmin, ymin, xmax, ymax
     """
        
     def __init__(self):
-        super(TFAnnotator, self).__init__()
+        super(TFAnnotationWriter, self).__init__()
         self.columns = ['filename', 'width', 'height',
             'class', 'xmin', 'ymin', 'xmax', 'ymax']
         self.annotations = []
@@ -117,3 +132,28 @@ class TFAnnotator(Annotator):
         dataframe.to_csv(output_file, index=None)
 
 
+
+class AnnotationReader(object):
+    """Defines a generic annotation reader"""
+
+    def __init__(self):
+        self.annotations = None
+
+
+    def read_annotations(self, file_path):
+        raise NotImplementedError()
+
+
+class CSVAnnotationReader(AnnotationReader):
+    """Reader implementation for stanford car dataset .csv format
+        Format: filename, xmin, ymin, xmax, ymax, class
+    """
+    def ___init__(self):
+        super(CSVAnnotationReader, self).__init__()
+        self.formatMap = ['filename', 'xmin', 'ymin', 'xmax', 'ymax', 'class'] 
+
+
+    def read_annotations(self, filePath):
+        self.annotations = []
+        with open(filePath) as csvFile:
+            self.annotations = csv.reader(csvFile, delimiter=',')
