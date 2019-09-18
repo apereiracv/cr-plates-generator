@@ -17,6 +17,7 @@
 #######################################################################
 #!/usr/bin/python
 
+# External imports
 import os
 import ast
 import copy
@@ -24,8 +25,11 @@ import cv2
 import rstr
 import numpy as np
 import PIL.Image, PIL.ImageFont, PIL.ImageDraw
+
+# Internal imports
 import perspective
 import utils
+import sample
 
 RGB_GREEN = (0, 255, 0)
 RGBA_GREEN = (0, 255, 0, 0)
@@ -34,56 +38,61 @@ BBOX_ANNOTATION = {'class': None, 'cx': None, 'cy': None, 'w': None, 'h': None, 
 SPECIAL_CHARS = ['-']
 
 
-class Plate(object):
+class PlateObject(sample.ImageObject):
     """Represents a Plate and holds all its attributes"""
 
-    def __init__(self, context, plate_type, template):
+    def __init__(self, templates, context):
         """Constructor"""
         # Base attributes
-        self.context = context
-        self.type = plate_type
-        self.base_file = None
+        self.type = None
         self.plate_number = None
-        self.bounding_boxes = None
-        self.image_data = None     
-
-        self.__autogenerate(template)
-
-
-    def __autogenerate(self, template):
-        """Generates plate based on template provided"""
-        # Open base image template 
-        self.base_file = utils.get_random_item(template["base-image"])
-        image_path = os.path.join(self.context.getConfig("General", "templates_path"), self.base_file)
-        self.image_data = PIL.Image.open(image_path)
-
+        self.bounding_boxes = None #TODO: these will be characters only
+        self.image_data = None
+        self.context = context #TODO: Is this needed?
         
+        image_data = self.auto_generate(templates, context)
+        super(PlateObject, self).__init__(self.type, image_data, context)
+
+    def auto_generate(self, templates, context):
+        """Generates plate based on template provided"""
+        self.plate_type = utils.get_random_item(templates)
+        template = templates[self.plate_type]
+
+        # Open base image template 
+        base_file = utils.get_random_item(template["base-image"])
+        image_path = os.path.join(self.context.getConfig("General", "templates_path"), base_file)
+        image_data = PIL.Image.open(image_path)
+
         # Generate & draw plate number
         plate_template = utils.get_random_item(template["plate-number"])
-        self.plate_number, self.bounding_boxes = self.draw_regex(plate_template)
+        image_data, self.plate_number, self.bounding_boxes = self.draw_regex(plate_template, image_data)
 
         # Draw extra text, if any
         if "extra-text" in template.keys():
             for text_template in template["extra-text"]:
-                self.draw_regex(text_template)
+                image_data, _ , _ = self.draw_regex(text_template, image_data)
 
         # Will use CV2 for the rest of image operations
-        self.image_data = self.pil_to_cv2(self.image_data)
+        image_data = self.pil_to_cv2(image_data)
 
         # Generate plate bbox, add it to the list
-        w = self.image_data.shape[1]
-        h = self.image_data.shape[0]
-        cx = (w / 2)
-        cy = (h / 2)
-        plate_bbox = copy.copy(BBOX_ANNOTATION)
-        plate_bbox['class'] = self.type
-        plate_bbox['cx'], plate_bbox['cy'], plate_bbox['w'], plate_bbox['h'] = cx, cy, w, h
-        self.bounding_boxes.append(plate_bbox)
+        # w = self.image_data.shape[1]
+        # h = self.image_data.shape[0]
+        # cx = (w / 2)
+        # cy = (h / 2)
+        # plate_bbox = copy.copy(BBOX_ANNOTATION)
+        # plate_bbox['class'] = self.type
+        # plate_bbox['cx'], plate_bbox['cy'], plate_bbox['w'], plate_bbox['h'] = cx, cy, w, h
+        # self.bounding_boxes.append(plate_bbox)
+
+        #TODO: Add random perspective transformations
+
+        return image_data
 
 
-    def draw_regex(self, text_template):
+    def draw_regex(self, text_template, image_data):
         """Draws text on plate image based on a template object"""
-        draw = PIL.ImageDraw.Draw(self.image_data)
+        draw = PIL.ImageDraw.Draw(image_data)
         font_path = os.path.join(self.context.getConfig("General", "templates_path"), text_template["font"])
         text_font = PIL.ImageFont.truetype(font_path, text_template["size"])
         text = rstr.xeger(text_template["regex"])
@@ -112,7 +121,7 @@ class Plate(object):
             bounding_boxes.append(new_bbox)
             last_pos_x = last_pos_x + width + text_template["spacing"]
 
-        return text, bounding_boxes
+        return image_data, text, bounding_boxes
 
 
     def draw_all_bboxes(self):
@@ -156,21 +165,21 @@ class Plate(object):
             bbox['h'] = bbox['h'] * scale_factor
 
 
-    def save_image(self, path=None):
-        """Saves plate image to disk"""
-        savePath = path if path is not None else self.context.getConfig("General", "output_path")
-        savePath = os.path.join(savePath, self.get_filename())
-        savePath = savePath.lower()
-        save_data = self.image_data
-        # Eliminate alpha channel to optimize storage
-        if save_data.shape[2] == 4:
-            save_data = cv2.cvtColor(save_data, cv2.COLOR_RGBA2RGB)
-        # Draw bounding boxes if needed
-        if self.context.getBoolean("Image", "draw_bboxes"):
-            save_data = self.draw_all_bboxes()
+    # def save_image(self, path=None):
+    #     """Saves plate image to disk"""
+    #     savePath = path if path is not None else self.context.getConfig("General", "output_path")
+    #     savePath = os.path.join(savePath, self.get_filename())
+    #     savePath = savePath.lower()
+    #     save_data = self.image_data
+    #     # Eliminate alpha channel to optimize storage
+    #     if save_data.shape[2] == 4:
+    #         save_data = cv2.cvtColor(save_data, cv2.COLOR_RGBA2RGB)
+    #     # Draw bounding boxes if needed
+    #     if self.context.getBoolean("Image", "draw_bboxes"):
+    #         save_data = self.draw_all_bboxes()
 
-        cv2.imwrite(savePath, save_data)
-        return savePath
+    #     cv2.imwrite(savePath, save_data)
+    #     return savePath
 
 
     def get_annotation(self):

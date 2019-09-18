@@ -28,7 +28,6 @@ import utils
 
 def get_random_bg(context):
     """Returns a random background image from configured path"""
-
     bg_path = context.getConfig('General', 'backgrounds_path')
     bg_list = os.listdir(bg_path)
     selected_bg = bg_list[random.randrange(len(bg_list))]
@@ -48,7 +47,6 @@ def get_random_bg(context):
 
 def get_random_position(image_width, image_height, bg_width, bg_height):
     """Calculates a random position for an image inside another"""
-    
     assert(bg_width > image_width)
     assert(bg_height > image_height)
 
@@ -84,5 +82,3 @@ def add_backgroud(image, bboxes, context):
             result_bboxes.append(new_bbox)
 
     return result_image, result_bboxes
-
-

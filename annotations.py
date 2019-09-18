@@ -20,7 +20,6 @@
 import os
 import copy
 import pandas as pd
-import inspect
 import sys
 import csv
 
@@ -63,8 +62,8 @@ class AnnotationWriter(object):
         raise NotImplementedError()
 
 
-    def append_annotation(self, plate):
-        new_anotation = self.get_annotation(plate)
+    def append_annotations(self, sample):
+        new_anotation = self.get_annotation(sample)
         self.annotations.append(new_anotation)
 
 
@@ -74,11 +73,11 @@ class JSONAnnotationWriter(AnnotationWriter):
     """
 
     def __init__(self):
-        super(JSONAnnotationWriter, self).__init__()
         self.plate_annotation = {'filename': None, 'class': None, 'bboxes': []}
         self.bbox_annotation = {'class': None, 'cx': None, 'cy': None, 'w': None, 'h': None, 'angle': 0}
         self.annotations = []
         self.extension = "json"
+        super(JSONAnnotationWriter, self).__init__()
 
 
     def get_annotation(self, plate):
@@ -105,7 +104,7 @@ class TFAnnotationWriter(AnnotationWriter):
     def __init__(self):
         super(TFAnnotationWriter, self).__init__()
         self.columns = ['filename', 'width', 'height',
-            'class', 'xmin', 'ymin', 'xmax', 'ymax']
+                        'class', 'xmin', 'ymin', 'xmax', 'ymax']
         self.annotations = []
         self.extension = "csv"
 
@@ -138,22 +137,55 @@ class AnnotationReader(object):
 
     def __init__(self):
         self.annotations = None
+        self.current = 0
 
-
+    #region Virtual methods
     def read_annotations(self, file_path):
         raise NotImplementedError()
+
+    #endregion
+
+    #region Concrete methods
+    def __next__(self):
+        """Self iterable function"""
+        result = None
+        if not self.annotations:
+            raise StopIteration
+        elif self.current >= len(self.annotations):
+            self.current = 0
+            result = self.annotations[self.current]
+        else:
+            result = self.annotations[self.current]
+            self.current += 1
+        
+        return result
+
+
+        def __iter__(self):
+            return self
+    #endregion
 
 
 class CSVAnnotationReader(AnnotationReader):
     """Reader implementation for stanford car dataset .csv format
         Format: filename, xmin, ymin, xmax, ymax, class
     """
-    def ___init__(self):
+    def __init__(self):
+        self.format_map = ['filename', 'xmin', 'ymin', 'xmax', 'ymax', 'label'] 
         super(CSVAnnotationReader, self).__init__()
-        self.formatMap = ['filename', 'xmin', 'ymin', 'xmax', 'ymax', 'class'] 
 
 
-    def read_annotations(self, filePath):
-        self.annotations = []
-        with open(filePath) as csvFile:
-            self.annotations = csv.reader(csvFile, delimiter=',')
+    #TODO: Extract full filename
+    def read_annotations(self, file_path):
+        """Reads annotations into dictionary with format_map as keys"""
+        data = []
+        with open(file_path) as csvFile:
+            data = csv.reader(csvFile, delimiter=',')
+            # Each row will be {filename: "filename.jpg", 'xmin': xmin, 'ymin': ymin, ...}
+            self.annotations = [{self.format_map[i]:value for i, value in enumerate(row)} for row in data]
+        
+        # Add full path to all filenames
+        dataset_path = os.path.dirname(file_path)
+        for annotation in self.annotations:
+            annotation['filename'] = os.path.join(dataset_path, annotation['filename'])
+
