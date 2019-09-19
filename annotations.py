@@ -54,7 +54,7 @@ class AnnotationWriter(object):
         self.annotations = None
 
 
-    def get_annotation(self, plate):
+    def get_annotation(self, image_object):
         raise NotImplementedError()
 
     
@@ -63,8 +63,7 @@ class AnnotationWriter(object):
 
 
     def append_annotations(self, sample):
-        new_anotation = self.get_annotation(sample)
-        self.annotations.append(new_anotation)
+        raise NotImplementedError()
 
 
 class JSONAnnotationWriter(AnnotationWriter):
@@ -108,26 +107,31 @@ class TFAnnotationWriter(AnnotationWriter):
         self.annotations = []
         self.extension = "csv"
 
+    def append_annotations(self, sample):
+        """Appends all annotations from a Sample's ImageObjects"""
+        for image_object in sample.objects:
+            annotation = self.get_annotation(image_object)
+            annotation['filename'] = sample.get_filename()
+            annotation['width'] = sample.image_data.shape[1]
+            annotation['height'] = sample.image_data.shape[0]
+            self.annotations.append(annotation)
 
-    def get_annotation(self, plate):
-        plate_bbox = plate.bounding_boxes[-1] # Last bbox is plate bbox
-        annotation = (
-            plate.get_filename(), # filename
-            plate.image_data.shape[1], # width
-            plate.image_data.shape[0], # height
-            plate.type, # class
-            plate_bbox['cx'] - (plate_bbox['w'] / 2), # xmin
-            plate_bbox['cy'] - (plate_bbox['h'] / 2), # ymin
-            plate_bbox['cx'] + (plate_bbox['w'] / 2), # xmax
-            plate_bbox['cy'] + (plate_bbox['h'] / 2) # ymax
-        )
+
+    def get_annotation(self, image_object):
+        annotation = { key: None for key in self.columns }
+        x1, y1, x2, y2 = image_object.position
+        annotation['xmin'] = x1
+        annotation['ymin'] = y1
+        annotation['xmax'] = x2
+        annotation['ymax'] = y2
+        annotation['class'] = image_object.label
 
         return annotation
 
     
     def save_annotations(self, output_path):
         dataframe = pd.DataFrame(self.annotations, columns=self.columns)
-        output_file = os.path.join(output_path, "annotations.{0}".format(self.extension))
+        output_file = os.path.join(output_path, "tf_annotations.{0}".format(self.extension))
         dataframe.to_csv(output_file, index=None)
 
 

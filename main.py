@@ -55,7 +55,7 @@ if __name__ == "__main__":
         for f in files:
             os.remove(f)
 
-    # Read  car annotations
+    # Read car annotations
     annotationReader.read_annotations(car_annotations_path)
 
     for i in range(dataset_size):
@@ -67,21 +67,12 @@ if __name__ == "__main__":
         new_plate = plate.PlateObject(templates, appContext)
         new_sample.add_image_object(new_car)
         new_sample.add_image_object(new_plate)
+                
+        # Generate annotation and image file
+        annotationWriter.append_annotations(new_sample)
         new_sample.save_image(output_path)
-        # Change perspective, size and background
-        # new_sample.image_data, new_sample.bounding_boxes = perspective.warp_image_random(new_sample.image_data, new_sample.bounding_boxes, appContext)
-        # new_sample.image_data, new_sample.bounding_boxes = scene.add_backgroud(new_sample.image_data, new_sample.bounding_boxes, appContext)
-
-        # # Generate annotation and image file
-        # annotationWriter.append_annotation(new_sample)
-        # new_sample.save_image(output_path)
-        # time.sleep(0.5) # TODO: Find solution for random images that are not written to disk
-        
-        # new_sample.add_image_object(None)
-        # new_sample.add_image_object(None)
-        # new_sample.save_image(output_path)
-        #annotator.append_annotation(new_sample.get_annotations())
+        #time.sleep(0.5) # TODO: Find solution for random images that are not written to disk
 
     # Save annotations
-    # annotationWriter.save_annotations(output_path)
+    annotationWriter.save_annotations(output_path)
 

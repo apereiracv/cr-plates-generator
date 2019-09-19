@@ -117,7 +117,8 @@ class StandardObject(ImageObject):
     """Represents a standard image object with the most common attributes"""
     
     def __init__(self, annotation, context):
-        label = annotation[StandardFormatMap.LABEL]
+        #TODO: label is hardcoded as vehicle for now, should be dynamic later
+        label = 'vehicle' #annotation[StandardFormatMap.LABEL]
         image_data = self.auto_generate(annotation)
         super(StandardObject, self).__init__(label, image_data, context)
 

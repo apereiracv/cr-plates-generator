@@ -75,6 +75,9 @@ class PlateObject(sample.ImageObject):
         # Will use CV2 for the rest of image operations
         image_data = self.pil_to_cv2(image_data)
 
+        # Do random perspective transform
+        image_data, _ = perspective.warp_image_random(image_data, None, context)
+
         # Generate plate bbox, add it to the list
         # w = self.image_data.shape[1]
         # h = self.image_data.shape[0]
@@ -84,8 +87,6 @@ class PlateObject(sample.ImageObject):
         # plate_bbox['class'] = self.type
         # plate_bbox['cx'], plate_bbox['cy'], plate_bbox['w'], plate_bbox['h'] = cx, cy, w, h
         # self.bounding_boxes.append(plate_bbox)
-
-        #TODO: Add random perspective transformations
 
         return image_data
 
