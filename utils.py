@@ -20,7 +20,7 @@ import cv2
 import random
 
 def get_random_item(collection):
-    """Returns a random item from a list or dict"""
+    """Returns a random item from a collection (list or dictionary)"""
     if isinstance(collection, list):
         index = random.randrange(len(collection))
         return collection[index]
@@ -37,6 +37,7 @@ def rescale_image(image, scale_factor):
     result = cv2.resize(image, None, fx=scale_factor, fy=scale_factor, interpolation=interpol)
     return result
 
+
 def random_rescale(image, scales):
     """Rescale an image by a random scale picked from provided list of sizes"""
     scale_factor = get_random_item(scales)
@@ -51,6 +52,23 @@ def resize_image(image, size):
         interpol = cv2.INTER_CUBIC
     result = cv2.resize(image, (size[0], size[1]), interpolation=interpol)
     return result
+
+
+def rescale_image_relative(image, base_scale, base_width):
+    """Re-scales image on a scale factor relative to other image"""
+    target_width = base_scale * base_width
+    image_width = image.shape[1]
+    target_factor = target_width / image_width
+    interpol = cv2.INTER_CUBIC if target_factor > 1 else cv2.INTER_AREA
+    result = cv2.resize(image, None, fx=target_factor, fy=target_factor, interpolation=interpol)
+    return result
+
+
+def random_rescale_relative(image, scale_range, decimals, base_image):
+    """Re-scales image on a random picked scale factor relative to other image"""
+    base_scale = round(random.uniform(scale_range[0], scale_range[1]), decimals)
+    base_width = base_image.shape[1]
+    return rescale_image_relative(image, base_scale, base_width)
 
 
 def add_image(new_image, position, bg_image):

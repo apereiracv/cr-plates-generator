@@ -41,7 +41,7 @@ class Sample(object):
         x1, y1, x2, y2 = scene.get_random_position(image_object.image_data.shape[1], image_object.image_data.shape[0], 
                                                     self.image_data.shape[1], self.image_data.shape[0])
         self.image_data = utils.add_image(image_object.image_data, (x1, y1, x2, y2), self.image_data)
-        image_object.set_position((x1, y1, x2, y2))
+        image_object.position = (x1, y1, x2, y2)
         self.objects.append(image_object)
 
 
@@ -70,7 +70,7 @@ class ImageObject(object):
     def __init__(self, label, image_data, context):
         """Constructor"""
         self.label = label
-        self.image_data = self.random_rescale(image_data, context)
+        self.image_data = image_data
         self.position = None
         # Add alpha channel to loaded image
         if self.image_data.shape[2] == 3:
@@ -79,16 +79,13 @@ class ImageObject(object):
         
 
     #region Common methods
-    def random_rescale(self, image_data, context):
-        """Resize image object by a scale factor"""
+    def random_rescale_relative(self, base_image, context):
+        """Rescales object in-between a scale range relative to a base image"""
         object_scales = ast.literal_eval(context.getConfig('Image', 'object_scales'))
-        sizes = object_scales[type(self).__name__]
-        return utils.random_rescale(image_data, sizes)
+        scales = object_scales[type(self).__name__]
+        self.image_data = utils.random_rescale_relative(self.image_data, scales['range'], scales['decimals'], base_image)
 
 
-    def set_position(self, position):
-        self.position = position
-    
     #endregion
 
     #region Virtual methods

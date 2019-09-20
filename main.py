@@ -64,7 +64,9 @@ if __name__ == "__main__":
         # Add random plate and car objects
         #TODO: template = annotation (logically)
         new_car = sample.StandardObject(next(annotationReader), appContext)
+        new_car.random_rescale_relative(new_sample.image_data, appContext)
         new_plate = plate.PlateObject(templates, appContext)
+        new_plate.random_rescale_relative(new_sample.image_data, appContext)
         new_sample.add_image_object(new_car)
         new_sample.add_image_object(new_plate)
                 
