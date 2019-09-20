@@ -44,19 +44,18 @@ class PlateObject(sample.ImageObject):
     def __init__(self, templates, context):
         """Constructor"""
         # Base attributes
-        self.type = None
         self.plate_number = None
         self.bounding_boxes = None #TODO: these will be characters only
         self.image_data = None
         self.context = context #TODO: Is this needed?
         
         image_data = self.auto_generate(templates, context)
-        super(PlateObject, self).__init__(self.type, image_data, context)
+        super(PlateObject, self).__init__(self.label, image_data, context)
 
     def auto_generate(self, templates, context):
         """Generates plate based on template provided"""
-        self.plate_type = utils.get_random_item(templates)
-        template = templates[self.plate_type]
+        self.label = utils.get_random_item(templates)
+        template = templates[self.label]
 
         # Open base image template 
         base_file = utils.get_random_item(template["base-image"])
@@ -84,7 +83,7 @@ class PlateObject(sample.ImageObject):
         # cx = (w / 2)
         # cy = (h / 2)
         # plate_bbox = copy.copy(BBOX_ANNOTATION)
-        # plate_bbox['class'] = self.type
+        # plate_bbox['class'] = self.label
         # plate_bbox['cx'], plate_bbox['cy'], plate_bbox['w'], plate_bbox['h'] = cx, cy, w, h
         # self.bounding_boxes.append(plate_bbox)
 
@@ -187,7 +186,7 @@ class PlateObject(sample.ImageObject):
         """Creates a JSON annotation of the plate"""
         annotation = copy.copy(PLATE_ANNOTATION)
         annotation['filename'] = self.get_filename()
-        annotation['class'] = self.type
+        annotation['class'] = self.label
                 
         for bbox in self.bounding_boxes:
             annotation['bboxes'].append(copy.copy(bbox))
@@ -207,5 +206,5 @@ class PlateObject(sample.ImageObject):
             return RGBA_GREEN
 
     def get_filename(self):
-        return "{0}_{1}.jpg".format(self.type, self.plate_number)
+        return "{0}_{1}.jpg".format(self.label, self.plate_number)
 #endregion

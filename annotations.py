@@ -179,7 +179,6 @@ class CSVAnnotationReader(AnnotationReader):
         super(CSVAnnotationReader, self).__init__()
 
 
-    #TODO: Extract full filename
     def read_annotations(self, file_path):
         """Reads annotations into dictionary with format_map as keys"""
         data = []
@@ -189,6 +188,7 @@ class CSVAnnotationReader(AnnotationReader):
             self.annotations = [{self.format_map[i]:value for i, value in enumerate(row)} for row in data]
         
         # Add full path to all filenames
+        # Assumes annotations and image files are in the same folder
         dataset_path = os.path.dirname(file_path)
         for annotation in self.annotations:
             annotation['filename'] = os.path.join(dataset_path, annotation['filename'])
