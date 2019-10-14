@@ -21,6 +21,8 @@ import random
 
 RGB_GREEN = (0, 255, 0)
 RGBA_GREEN = (0, 255, 0, 0)
+RGB_BLACK = (0, 0, 0)
+RGBA_BLACK = (0, 0, 0, 0)
 
 def get_random_item(collection):
     """Returns a random item from a collection (list or dictionary)"""
@@ -54,6 +56,18 @@ def resize_image(image, size):
     else:
         interpol = cv2.INTER_CUBIC
     result = cv2.resize(image, (size[0], size[1]), interpolation=interpol)
+    return result
+
+
+def pad_image(image, size):
+    """Resize image to a specific size [width, height] using padding"""
+    assert size[0] > image.shape[1] and size[1] > image.shape[0]
+    delta_w = size[0] - image.shape[1]
+    delta_h = size[1] - image.shape[0]
+    top, bottom = delta_h // 2, delta_h - (delta_h // 2)
+    left, right = delta_w // 2, delta_w - (delta_w // 2)
+    color = RGB_BLACK
+    result = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
     return result
 
 
