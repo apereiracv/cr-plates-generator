@@ -107,6 +107,7 @@ class TFAnnotationWriter(AnnotationWriter):
         self.annotations = []
         self.extension = "csv"
 
+
     def append_annotations(self, sample):
         """Appends all annotations from a Sample's ImageObjects"""
         for image_object in sample.objects:
@@ -133,7 +134,6 @@ class TFAnnotationWriter(AnnotationWriter):
         dataframe = pd.DataFrame(self.annotations, columns=self.columns)
         output_file = os.path.join(output_path, "tf_annotations.{0}".format(self.extension))
         dataframe.to_csv(output_file, index=None)
-
 
 
 class AnnotationReader(object):

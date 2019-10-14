@@ -52,6 +52,7 @@ class PlateObject(sample.ImageObject):
         image_data = self.auto_generate(templates, context)
         super(PlateObject, self).__init__(self.label, image_data, context)
 
+
     def auto_generate(self, templates, context):
         """Generates plate based on template provided"""
         self.label = utils.get_random_item(templates)
@@ -75,17 +76,9 @@ class PlateObject(sample.ImageObject):
         image_data = self.pil_to_cv2(image_data)
 
         # Do random perspective transform
-        image_data, _ = perspective.warp_image_random(image_data, None, context)
-
-        # Generate plate bbox, add it to the list
-        # w = self.image_data.shape[1]
-        # h = self.image_data.shape[0]
-        # cx = (w / 2)
-        # cy = (h / 2)
-        # plate_bbox = copy.copy(BBOX_ANNOTATION)
-        # plate_bbox['class'] = self.label
-        # plate_bbox['cx'], plate_bbox['cy'], plate_bbox['w'], plate_bbox['h'] = cx, cy, w, h
-        # self.bounding_boxes.append(plate_bbox)
+        warp_perspective = context.getBoolean('Perspective', 'warp_perspective')
+        if warp_perspective:
+            image_data, self.bounding_boxes = perspective.warp_image_random(image_data, self.bounding_boxes, context)
 
         return image_data
 
@@ -182,16 +175,22 @@ class PlateObject(sample.ImageObject):
     #     return savePath
 
 
-    def get_annotation(self):
-        """Creates a JSON annotation of the plate"""
-        annotation = copy.copy(PLATE_ANNOTATION)
-        annotation['filename'] = self.get_filename()
-        annotation['class'] = self.label
-                
+    def get_characters_as_image_objects(self):
+        """Returns a list of ImageObjects representing each character in the plate"""
+        characterObjects = []
         for bbox in self.bounding_boxes:
-            annotation['bboxes'].append(copy.copy(bbox))
+            xmin, ymin, xmax, ymax = perspective.bbox_to_coords(bbox)
+            annotation = {sample.StandardFormatMap.FILENAME: '',
+                          sample.StandardFormatMap.LABEL: bbox['class'],
+                          sample.StandardFormatMap.XMIN: xmin,
+                          sample.StandardFormatMap.YMIN: ymin,
+                          sample.StandardFormatMap.XMAX: xmax,
+                          sample.StandardFormatMap.YMAX: ymax}
+            characterObject = sample.StandardObject(annotation, self.context)
+            characterObject.position = (xmin, ymin, xmax, ymax)
+            characterObjects.append(characterObject)
 
-        return annotation
+        return characterObjects
 
 
 #region Utility functions
@@ -204,6 +203,7 @@ class PlateObject(sample.ImageObject):
             return RGB_GREEN
         else:
             return RGBA_GREEN
+
 
     def get_filename(self):
         return "{0}_{1}.jpg".format(self.label, self.plate_number)

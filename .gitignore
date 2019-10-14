@@ -1,6 +1,9 @@
 # Ignore Visual Studio Code files
 .vscode
 
+# Ignore PyCharm files
+.idea
+
 # Ignore compiled files
 *.pyc
 *.pyo

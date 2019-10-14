@@ -19,6 +19,9 @@
 import cv2
 import random
 
+RGB_GREEN = (0, 255, 0)
+RGBA_GREEN = (0, 255, 0, 0)
+
 def get_random_item(collection):
     """Returns a random item from a collection (list or dictionary)"""
     if isinstance(collection, list):
@@ -82,4 +85,11 @@ def add_image(new_image, position, bg_image):
     for channel in range(0, 3):
         result[y1:y2, x1:x2, channel] = (alpha_image * new_image[:, :, channel] + alpha_bg * result[y1:y2, x1:x2, channel])
 
+    return result
+
+
+def draw_bounding_box(image, x1, y1, x2, y2):
+    """Draws a single bounding box with the format (x1, y1, x2, y2)"""
+    color = RGB_GREEN if image.shape[2] == 3 else RGBA_GREEN
+    result = cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
     return result

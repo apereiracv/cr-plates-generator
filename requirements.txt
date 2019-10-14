@@ -1,4 +1,6 @@
+numpy
 opencv-python>=3.4.4
 jsonpickle>=1.0
 pillow>=5.3.0
 rstr
+pandas

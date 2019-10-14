@@ -29,9 +29,9 @@ import utils
 class Sample(object):
     """Represents a dataset sample image"""
 
-    def __init__(self, context):
+    def __init__(self, context, add_bg):
         self.context = context
-        self.image_data = scene.get_random_bg(self.context)
+        self.image_data = scene.get_random_bg(self.context) if add_bg else None
         self.id = str(uuid.uuid4()).upper()
         self.objects = []
 
@@ -52,17 +52,25 @@ class Sample(object):
         # Eliminate alpha channel to optimize storage
         if save_data.shape[2] == 4:
             save_data = cv2.cvtColor(save_data, cv2.COLOR_RGBA2RGB)
-        #TODO: Draw bounding boxes if needed
-        #if self.context.getBoolean("Image", "draw_bboxes"):
-        #    save_data = self.draw_all_bboxes()
-        cv2.imwrite(save_path, save_data)
+        # Draw bounding boxes if needed
+        if self.context.getBoolean("Image", "draw_bboxes"):
+            save_data = self.draw_all_bboxes()
 
+        cv2.imwrite(save_path, save_data)
         return save_data
 
 
     def get_filename(self):
         return "{0}.jpg".format(self.id)
 
+
+    def draw_all_bboxes(self):
+        result = self.image_data
+        for image_object in self.objects:
+            xmin, ymin, xmax, ymax = image_object.position
+            result = utils.draw_bounding_box(result, xmin, ymin, xmax, ymax)
+
+        return result
 
 class ImageObject(object):
     """Represents a detectable object inside and image"""
@@ -73,7 +81,7 @@ class ImageObject(object):
         self.image_data = image_data
         self.position = None
         # Add alpha channel to loaded image
-        if self.image_data.shape[2] == 3:
+        if self.image_data is not None and self.image_data.shape[2] == 3:
             self.image_data = cv2.cvtColor(self.image_data, cv2.COLOR_RGB2RGBA)
         
         
@@ -94,7 +102,7 @@ class ImageObject(object):
         raise NotImplementedError
 
 
-    def auto_generate(self):
+    def auto_generate(self, annotation, context):
         """Virtual function to auto-generate an image object"""
         raise NotImplementedError
 
@@ -115,20 +123,21 @@ class StandardObject(ImageObject):
     
     def __init__(self, annotation, context):
         #TODO: label is hardcoded as vehicle for now, should be dynamic later
-        label = 'vehicle' #annotation[StandardFormatMap.LABEL]
-        image_data = self.auto_generate(annotation)
+        label = annotation.get(StandardFormatMap.LABEL, 'vehicle')
+        image_data = self.auto_generate(annotation, context)
         super(StandardObject, self).__init__(label, image_data, context)
 
 
     #TODO: Image operations (cv2) may be extracted to utility
-    def auto_generate(self, annotation):
+    def auto_generate(self, annotation, context):
         """Returns object image_data from standard annotation"""
         filename = annotation[StandardFormatMap.FILENAME]
         image_data = cv2.imread(filename) #TODO: Catch non-existing files
-        # Get annotation bounding box
-        xmin, ymin = int(annotation[StandardFormatMap.XMIN]), int(annotation[StandardFormatMap.YMIN])
-        xmax, ymax = int(annotation[StandardFormatMap.XMAX]), int(annotation[StandardFormatMap.YMAX])
-        # Get the exact frame of the object from bounding box
-        image_data = image_data[ymin:ymax,xmin:xmax,:]
+        if image_data is not None:
+            # Get annotation bounding box
+            xmin, ymin = int(annotation[StandardFormatMap.XMIN]), int(annotation[StandardFormatMap.YMIN])
+            xmax, ymax = int(annotation[StandardFormatMap.XMAX]), int(annotation[StandardFormatMap.YMAX])
+            # Get the exact frame of the object from bounding box
+            image_data = image_data[ymin:ymax,xmin:xmax,:]
 
         return image_data
