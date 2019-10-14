@@ -145,7 +145,7 @@ class PlateObject(sample.ImageObject):
 
 
     def rescale_image(self, scale_factor):
-        """Resize plate image by a scale factor"""
+        """Scale plate image by a scale factor"""
         interpol = cv2.INTER_CUBIC if scale_factor > 1 else cv2.INTER_AREA
         self.image_data = cv2.resize(self.image_data, None, fx=scale_factor, fy=scale_factor, interpolation=interpol)
         self.rescale_bboxes(scale_factor)
@@ -154,6 +154,25 @@ class PlateObject(sample.ImageObject):
     def resize_image(self, new_width):
         scale_factor = new_width / self.image_data.shape[1]
         self.rescale_image(scale_factor)
+
+
+    def pad_image(self, size):
+        """Pads plate image to a specific size [width, height]"""
+        assert size[0] >= self.image_data.shape[1] and size[1] >= self.image_data.shape[0]
+        delta_w = size[0] - self.image_data.shape[1]
+        delta_h = size[1] - self.image_data.shape[0]
+        top, bottom = delta_h // 2, delta_h - (delta_h // 2)
+        left, right = delta_w // 2, delta_w - (delta_w // 2)
+        color = (0, 0, 0)
+        self.image_data = cv2.copyMakeBorder(self.image_data, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+        self.pad_bboxes(top, left)
+
+
+    def pad_bboxes(self, top, left):
+        """Re-calculates bounding boxes according to a top/left padding"""
+        for bbox in self.bounding_boxes:
+            bbox['cx'] = bbox['cx'] + left
+            bbox['cy'] = bbox['cy'] + top
 
 
     def rescale_bboxes(self, scale_factor):

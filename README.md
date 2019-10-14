@@ -37,7 +37,7 @@ The following is a description of all the settings on this file.
 | resize_plate| Apply resizing to the base plate images setting | bool|
 | plate_scales| List of scaling factors to be used | list|
 | resize_bg| Apply resizing to background images to a fixed size | bool|
-| bg_sizes| List of target (width,height) pairs to resize bgs| list|
+| image_sizes| List of target (width,height) pairs to resize bgs| list|
 | draw_bboxes| Whether to draw bounding boxes (Use for testing only)| bool|
 | bbox_padding| Spacing between bbox and inner object (px)| int|
 |**[Perspective]**|||

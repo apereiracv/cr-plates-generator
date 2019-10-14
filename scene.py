@@ -34,7 +34,7 @@ def get_random_bg(context):
     bg_image = cv2.imread(os.path.join(bg_path, selected_bg))
 
     # Resize image according to the list of configured sizes
-    sizes = ast.literal_eval(context.getConfig('Image', 'bg_sizes'))
+    sizes = ast.literal_eval(context.getConfig('Image', 'image_sizes'))
     size = utils.get_random_item(sizes)
     bg_image = utils.resize_image(bg_image, size)
 

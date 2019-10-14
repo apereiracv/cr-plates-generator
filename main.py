@@ -98,10 +98,15 @@ def create_plate_text_dataset(appContext, templates):
         new_sample = sample.Sample(appContext, False)
         # Add random plate and character objects
         new_plate = plate.PlateObject(templates, appContext)
+        # Re-scale plate to a random configured size, maintaining aspect ratio
         object_scales = ast.literal_eval(appContext.getConfig('Image', 'object_scales'))
         plate_sizes = object_scales[new_plate.__class__.__name__]['width_sizes']
         new_plate_size = utils.get_random_item(plate_sizes)
         new_plate.resize_image(new_plate_size)
+        # Pad plate image with black borders to match a square image size
+        image_sizes = ast.literal_eval(appContext.getConfig('Image', 'image_sizes'))
+        image_size = utils.get_random_item(image_sizes)
+        new_plate.pad_image(image_size)
         character_objects = new_plate.get_characters_as_image_objects()
         new_sample.image_data = new_plate.image_data
         new_sample.objects.extend(character_objects)
