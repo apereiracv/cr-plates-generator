@@ -20,6 +20,7 @@
 # External imports
 import os
 import glob
+import ast
 
 # Internal imports
 import plate
@@ -27,6 +28,8 @@ import context
 import jsonutil
 import annotations
 import sample
+import utils
+
 
 def clear_directory(path):
     if not os.path.exists(path):
@@ -38,6 +41,8 @@ def clear_directory(path):
 
 
 def create_vehicle_plate_dataset(appContext, templates):
+    """Generates a dataset that includes vehicles and plates for detection"""
+
     dataset_size = int(appContext.getConfig('General', 'dataset_size'))
     output_path = appContext.getConfig('General', 'output_path')
     car_annotations_path = appContext.getConfig('General', 'car_annotations_path')
@@ -76,6 +81,8 @@ def create_vehicle_plate_dataset(appContext, templates):
 
 
 def create_plate_text_dataset(appContext, templates):
+    """Generates a dataset that only includes plates for text detection"""
+
     dataset_size = int(appContext.getConfig('General', 'dataset_size'))
     output_path = appContext.getConfig('General', 'output_path')
     annotation_writer_type = appContext.getConfig('General', 'annotation_writer_type')
@@ -91,6 +98,10 @@ def create_plate_text_dataset(appContext, templates):
         new_sample = sample.Sample(appContext, False)
         # Add random plate and character objects
         new_plate = plate.PlateObject(templates, appContext)
+        object_scales = ast.literal_eval(appContext.getConfig('Image', 'object_scales'))
+        plate_sizes = object_scales[new_plate.__class__.__name__]['width_sizes']
+        new_plate_size = utils.get_random_item(plate_sizes)
+        new_plate.resize_image(new_plate_size)
         character_objects = new_plate.get_characters_as_image_objects()
         new_sample.image_data = new_plate.image_data
         new_sample.objects.extend(character_objects)

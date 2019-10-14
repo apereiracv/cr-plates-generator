@@ -109,9 +109,11 @@ class PlateObject(sample.ImageObject):
             y1 = (char_pos_y - bbox_padding[1])
             x2 = (char_pos_x + width + bbox_padding[0])
             y2 = (char_pos_y + height + bbox_padding[1])
-            new_bbox['class'] = char
-            new_bbox['cx'], new_bbox['cy'], new_bbox['w'], new_bbox['h'] = perspective.coords_to_bbox([x1,y1,x2,y2])
-            bounding_boxes.append(new_bbox)
+            # Don't add dash as a "detectable" character
+            if char != '-':
+                new_bbox['class'] = char
+                new_bbox['cx'], new_bbox['cy'], new_bbox['w'], new_bbox['h'] = perspective.coords_to_bbox([x1,y1,x2,y2])
+                bounding_boxes.append(new_bbox)
             last_pos_x = last_pos_x + width + text_template["spacing"]
 
         return image_data, text, bounding_boxes
@@ -136,20 +138,25 @@ class PlateObject(sample.ImageObject):
         cv2.polylines(image, [pts], True, self.get_color(), 2)
 
 
-    def random_resize(self):
+    def random_rescale(self):
         plate_scales = ast.literal_eval(self.context.getConfig('Image', 'plate_scales'))
         scale_factor = utils.get_random_item(plate_scales)
-        self.resize_image(scale_factor)
-        self.resize_bboxes(scale_factor)
+        self.rescale_image(scale_factor)
 
 
-    def resize_image(self, scale_factor):
+    def rescale_image(self, scale_factor):
         """Resize plate image by a scale factor"""
         interpol = cv2.INTER_CUBIC if scale_factor > 1 else cv2.INTER_AREA
         self.image_data = cv2.resize(self.image_data, None, fx=scale_factor, fy=scale_factor, interpolation=interpol)
+        self.rescale_bboxes(scale_factor)
 
 
-    def resize_bboxes(self, scale_factor):
+    def resize_image(self, new_width):
+        scale_factor = new_width / self.image_data.shape[1]
+        self.rescale_image(scale_factor)
+
+
+    def rescale_bboxes(self, scale_factor):
         """Re-calculates bounding boxes according to a scale factor"""
         for bbox in self.bounding_boxes:
             bbox['cx'] = bbox['cx'] * scale_factor
